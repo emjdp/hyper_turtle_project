@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="turtlebot3_burger_rgbd">
+  <!-- Include TurtleBot3 Burger -->
+  <xacro:include filename="$(find turtlebot3_description)/urdf/turtlebot3_burger.urdf"/>
+
+  <!-- Include RGB-D Camera -->
+  <xacro:include filename="$(find hyper_turtle_description)/urdf/rgbd_camera.xacro"/>
+
+  <!-- Attach RGB-D Camera to base_link -->
+  <xacro:rgbd_camera 
+    parent="base_link" 
+    name="camera" 
+    x="0.08" y="0.0" z="0.14" 
+    roll="0.0" pitch="0.0" yaw="0.0" />
+</robot>
