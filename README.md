@@ -85,6 +85,10 @@ source install/setup.bash
 ros2 launch hyper_turtle_bringup burger_rgbd_sim.launch.py
 ```
 
+위 명령은 기본으로 Gazebo, 로봇, ROS-GZ bridge, Xbox 게임패드 teleop을 함께 실행합니다.
+`joy_device_id`는 `/dev/input/js*` 번호가 아니라 `ros2 run joy joy_enumerate_devices`에 표시되는 ID입니다.
+현재 연결된 Xbox 패드는 보통 `ID 0`으로 잡힙니다.
+
 Gazebo 화면만 확인하고 RViz는 끄려면:
 ```bash
 ros2 launch hyper_turtle_bringup burger_rgbd_sim.launch.py gazebo_gui:=true rviz:=false
@@ -95,14 +99,12 @@ ros2 launch hyper_turtle_bringup burger_rgbd_sim.launch.py gazebo_gui:=true rviz
 ros2 launch hyper_turtle_bringup burger_rgbd_sim.launch.py gazebo_gui:=false rviz:=false
 ```
 
-**터미널 2: Xbox 게임패드 teleop 실행**
+컨트롤러 없이 센서/맵만 띄우려면:
 ```bash
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
-ros2 launch hyper_turtle_control xbox_teleop.launch.py
+ros2 launch hyper_turtle_bringup burger_rgbd_sim.launch.py xbox_teleop:=false
 ```
 
-**터미널 3: SLAM 실행**
+**터미널 2: SLAM 실행**
 ```bash
 cd /home/emjdp/hyper_Turtle_Project
 source /opt/ros/jazzy/setup.bash
@@ -110,7 +112,7 @@ source install/setup.bash
 ros2 launch hyper_turtle_mapping slam.launch.py use_sim_time:=true
 ```
 
-**터미널 4: rosbag 데이터 저장**
+**터미널 3: rosbag 데이터 저장**
 수동 주행 중 맵 좌표, 센서 데이터, 게임패드 입력 등을 모두 기록합니다.
 ```bash
 cd /home/emjdp/hyper_Turtle_Project
@@ -173,7 +175,8 @@ ros2 run nav2_map_server map_saver_cli -f maps/test_map
 1. **Xbox 게임패드 연결 확인:**
    - 컨트롤러가 인식되지 않으면 `/dev/input/js*` 확인 및 WSL 입력 장치 연결 상태 확인
    - `jstest /dev/input/js0` 로 축/버튼 동작 확인
-   - `ros2 run joy joy_node` 및 `ros2 topic echo /joy` 로 매핑 검증 및 `xbox_teleop.yaml` 파라미터 수정 (Deadman/Turbo 버튼)
+   - `ros2 run joy joy_enumerate_devices` 로 ROS joy ID 확인
+   - `ros2 topic echo /joy` 로 매핑 검증 및 `xbox_teleop.yaml` 파라미터 수정 (Deadman/Turbo 버튼)
 2. **실제 로봇 주행 안전 테스트:**
    - 실제 로봇에서 처음 테스트할 때는 바퀴를 띄운 상태 또는 넓은 공간에서 낮은 속도로 테스트
 3. **RGB-D 카메라 장착 및 TF 보정:**
