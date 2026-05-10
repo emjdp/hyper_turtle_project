@@ -7,6 +7,7 @@ TurtleBot3 Burger 기반 건물 스캔 및 그래피티 탐지 로봇 프로젝�
 
 - ROS: ROS 2 Jazzy
 - 시뮬레이터: Gazebo Sim
+- Python: Ubuntu 24.04 기본 Python 3.12
 
 ### 필요 패키지 설치
 만약 관련 ROS 2 패키지가 설치되어 있지 않다면 아래 명령을 통해 설치하세요:
@@ -32,6 +33,27 @@ sudo apt install \
   ros-jazzy-teleop-twist-joy
 ```
 
+### 팀 공통 Python 가상환경(.venv)
+
+`.venv` 디렉터리 자체는 GitHub에 올리지 않고, 아래 파일로 모든 팀원이 같은 환경을 재현합니다.
+
+- `setup_venv.sh`: ROS 2 Python 패키지를 함께 사용할 수 있도록 `--system-site-packages`로 `.venv` 생성
+- `requirements-dev.txt`: pip로 설치해야 하는 프로젝트 직접 의존성 관리
+
+전체 의존성 설치와 `.venv` 생성을 한 번에 실행하려면:
+
+```bash
+./install_dependencies.sh
+```
+
+이미 ROS 2 Jazzy 의존성이 설치되어 있고 Python 가상환경만 맞추려면:
+
+```bash
+./setup_venv.sh
+source /opt/ros/jazzy/setup.bash
+source .venv/bin/activate
+```
+
 ---
 
 ## 빌드 명령
@@ -40,6 +62,7 @@ sudo apt install \
 
 ```bash
 source /opt/ros/jazzy/setup.bash
+source .venv/bin/activate
 colcon build --symlink-install
 ```
 
@@ -60,6 +83,16 @@ ros2 pkg list | grep hyper_turtle
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 launch hyper_turtle_bringup burger_rgbd_sim.launch.py
+```
+
+Gazebo 화면만 확인하고 RViz는 끄려면:
+```bash
+ros2 launch hyper_turtle_bringup burger_rgbd_sim.launch.py gazebo_gui:=true rviz:=false
+```
+
+원격/저사양 환경에서 Gazebo GUI도 끄려면:
+```bash
+ros2 launch hyper_turtle_bringup burger_rgbd_sim.launch.py gazebo_gui:=false rviz:=false
 ```
 
 **터미널 2: Xbox 게임패드 teleop 실행**

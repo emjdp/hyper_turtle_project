@@ -1,7 +1,7 @@
 import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
+from launch.actions import AppendEnvironmentVariable, DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable
 from launch.conditions import IfCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, Command
@@ -15,7 +15,8 @@ def generate_launch_description():
 
     # Arguments
     use_sim_time = LaunchConfiguration('use_sim_time', default='true')
-    world = LaunchConfiguration('world', default='empty.sdf')
+    world = LaunchConfiguration('world')
+    gazebo_gui = LaunchConfiguration('gazebo_gui', default='true')
     rviz = LaunchConfiguration('rviz', default='true')
 
     camera_x = LaunchConfiguration('camera_x', default='0.08')
@@ -29,11 +30,24 @@ def generate_launch_description():
     pkg_hyper_turtle_description = get_package_share_directory('hyper_turtle_description')
     pkg_hyper_turtle_bringup = get_package_share_directory('hyper_turtle_bringup')
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
+    pkg_turtlebot3_gazebo = get_package_share_directory('turtlebot3_gazebo')
 
     # Paths
+    default_world_path = os.path.join(pkg_turtlebot3_gazebo, 'worlds', 'empty_world.world')
+    model_sdf_path = os.path.join(
+        pkg_hyper_turtle_description,
+        'models',
+        'hyper_turtle_burger_rgbd',
+        'model.sdf'
+    )
     urdf_path = os.path.join(pkg_hyper_turtle_description, 'urdf', 'burger_rgbd.urdf.xacro')
     bridges_path = os.path.join(pkg_hyper_turtle_bringup, 'config', 'bridges.yaml')
     rviz_path = os.path.join(pkg_hyper_turtle_description, 'rviz', 'burger_rgbd.rviz')
+
+    add_turtlebot3_models = AppendEnvironmentVariable(
+        'GZ_SIM_RESOURCE_PATH',
+        os.path.join(pkg_turtlebot3_gazebo, 'models')
+    )
 
     # Robot State Publisher
     robot_state_publisher = Node(
@@ -53,12 +67,27 @@ def generate_launch_description():
         }]
     )
 
-    # Gazebo Sim
-    gazebo = IncludeLaunchDescription(
+    # Gazebo Sim server
+    gazebo_server = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')
         ),
-        launch_arguments={'gz_args': ['-r -s -v4 ', world]}.items()
+        launch_arguments={
+            'gz_args': ['-r -s -v4 ', world],
+            'on_exit_shutdown': 'true'
+        }.items()
+    )
+
+    # Gazebo Sim GUI client
+    gazebo_client = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')
+        ),
+        launch_arguments={
+            'gz_args': '-g -v4 ',
+            'on_exit_shutdown': 'true'
+        }.items(),
+        condition=IfCondition(gazebo_gui)
     )
 
     # Spawn Robot in Gazebo
@@ -66,10 +95,11 @@ def generate_launch_description():
         package='ros_gz_sim',
         executable='create',
         output='screen',
-        arguments=['-topic', 'robot_description',
-                   '-name', 'turtlebot3_burger',
-                   '-allow_renaming', 'true',
-                   '-z', '0.1']
+        arguments=[
+            '-file', model_sdf_path,
+            '-name', 'hyper_turtle_burger_rgbd',
+            '-z', '0.01'
+        ]
     )
 
     # ROS-GZ Bridge
@@ -98,8 +128,10 @@ def generate_launch_description():
 
     return LaunchDescription([
         set_gallium_driver,
+        add_turtlebot3_models,
         DeclareLaunchArgument('use_sim_time', default_value='true', description='Use simulation (Gazebo) clock if true'),
-        DeclareLaunchArgument('world', default_value='empty.sdf', description='Gazebo World file'),
+        DeclareLaunchArgument('world', default_value=default_world_path, description='Gazebo World file'),
+        DeclareLaunchArgument('gazebo_gui', default_value='true', description='Open Gazebo Sim GUI'),
         DeclareLaunchArgument('rviz', default_value='true', description='Open RViz'),
         DeclareLaunchArgument('camera_x', default_value='0.08', description='Camera X position relative to base_link'),
         DeclareLaunchArgument('camera_y', default_value='0.0', description='Camera Y position relative to base_link'),
@@ -107,7 +139,8 @@ def generate_launch_description():
         DeclareLaunchArgument('camera_roll', default_value='0.0', description='Camera roll angle'),
         DeclareLaunchArgument('camera_pitch', default_value='0.0', description='Camera pitch angle'),
         DeclareLaunchArgument('camera_yaw', default_value='0.0', description='Camera yaw angle'),
-        gazebo,
+        gazebo_server,
+        gazebo_client,
         robot_state_publisher,
         spawn_entity,
         ros_gz_bridge,

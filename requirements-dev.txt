@@ -1,0 +1,3 @@
+# Direct pip dependencies for local development.
+# ROS 2 dependencies are installed through apt/rosdep, not pip.
+pygame==2.6.1

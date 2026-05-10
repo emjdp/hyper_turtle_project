@@ -31,6 +31,7 @@ sudo apt install -y \
   ros-jazzy-teleop-twist-joy \
   python3-colcon-common-extensions \
   python3-rosdep \
+  python3-venv \
   python3-vcstool \
   jstest-gtk \
   joystick \
@@ -54,8 +55,12 @@ else
     echo "경고: 'src' 디렉토리를 찾을 수 없어 src 기반 의존성은 건너뜁니다."
 fi
 
+echo "=> 프로젝트 Python 가상환경(.venv) 설정 중..."
+bash "$SCRIPT_DIR/setup_venv.sh"
+
 echo "=== 설치 완료! ==="
 echo "환경 설정이 끝났습니다. 워크스페이스를 빌드하려면 다음 명령을 순서대로 실행하세요:"
 echo "source /opt/ros/jazzy/setup.bash"
+echo "source .venv/bin/activate"
 echo "colcon build --symlink-install"
 echo "source install/setup.bash"
