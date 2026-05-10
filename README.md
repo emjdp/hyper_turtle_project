@@ -1,14 +1,12 @@
 # Hyper Turtle Project
 
 TurtleBot3 Burger 기반 건물 스캔 및 그래피티 탐지 로봇 프로젝트입니다.
-현재 1차 목표로 **시뮬레이션 기반 Xbox 게임패드 수동 조종 및 매핑** 파이프라인이 구축되어 있습니다.
+
 
 ## 작업 환경 및 의존성
 
-- OS: Windows 11 + WSL2 Ubuntu 24.04
 - ROS: ROS 2 Jazzy
 - 시뮬레이터: Gazebo Sim
-- 하드웨어 가속: WSL OpenGL GPU 가속 (GALLIUM_DRIVER=d3d12)
 
 ### 필요 패키지 설치
 만약 관련 ROS 2 패키지가 설치되어 있지 않다면 아래 명령을 통해 설치하세요:
@@ -41,7 +39,6 @@ sudo apt install \
 프로젝트 루트 디렉터리에서 다음 명령을 실행하여 워크스페이스를 빌드합니다.
 
 ```bash
-cd /home/emjdp/hyper_Turtle_Project
 source /opt/ros/jazzy/setup.bash
 colcon build --symlink-install
 ```
@@ -60,7 +57,6 @@ ros2 pkg list | grep hyper_turtle
 
 **터미널 1: 시뮬레이션 실행**
 ```bash
-cd /home/emjdp/hyper_Turtle_Project
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 launch hyper_turtle_bringup burger_rgbd_sim.launch.py
@@ -68,7 +64,6 @@ ros2 launch hyper_turtle_bringup burger_rgbd_sim.launch.py
 
 **터미널 2: Xbox 게임패드 teleop 실행**
 ```bash
-cd /home/emjdp/hyper_Turtle_Project
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 launch hyper_turtle_control xbox_teleop.launch.py
@@ -171,8 +166,3 @@ ros2 run nav2_map_server map_saver_cli -f maps/test_map
    - 탐지 결과를 Depth 정보 및 로봇 Pose(Map 기준 좌표)와 융합하여 지도에 마킹
 
 ---
-
-## 알려진 한계 및 주의사항
-- WSL 환경에서 Gazebo 성능이 저하(버벅임)될 경우 Gazebo 창 크기를 줄이거나, RViz와 동시에 띄우는 것을 지양하세요.
-- 카메라 Update Rate나 PointCloud2 처리 등 무거운 연산은 성능 문제를 일으킬 수 있으므로 필요시에만 활성화하거나 해상도를 낮춰 사용하세요.
-- TurtleBot3 Gazebo의 `/cmd_vel` 타입이 `Twist` 또는 `TwistStamped`인지 ros_gz_bridge 설정과 일치하는지 실제 토픽 리스트(`ros2 topic list` 및 `gz topic -l`)를 통해 검증이 필요할 수 있습니다.
