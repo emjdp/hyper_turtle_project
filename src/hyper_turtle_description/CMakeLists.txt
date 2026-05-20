@@ -8,7 +8,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 
 install(
-  DIRECTORY models urdf rviz
+  DIRECTORY models urdf rviz config
   DESTINATION share/${PROJECT_NAME}
 )
 
