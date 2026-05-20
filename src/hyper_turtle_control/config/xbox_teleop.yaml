@@ -1,7 +1,7 @@
 teleop_twist_joy_node:
   ros__parameters:
     require_enable_button: true
-    enable_button: 5  # RB button on Xbox controller
+    enable_button: 7  # Enable button on Xbox Series X Controller over Bluetooth
     enable_turbo_button: 4  # LB button on Xbox controller
     
     axis_linear:

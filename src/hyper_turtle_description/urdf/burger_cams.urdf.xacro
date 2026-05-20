@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="hyper_turtle_burger_cams">
+
+  <xacro:include filename="$(find turtlebot3_description)/urdf/turtlebot3_burger.urdf"/>
+  <xacro:include filename="$(find hyper_turtle_description)/urdf/mono_camera.xacro"/>
+
+  <!-- C920 (primary, forward-facing, higher resolution) -->
+  <xacro:arg name="c920_x"     default="0.075"/>
+  <xacro:arg name="c920_y"     default="0.0"/>
+  <xacro:arg name="c920_z"     default="0.135"/>
+  <xacro:arg name="c920_roll"  default="0.0"/>
+  <xacro:arg name="c920_pitch" default="0.0"/>
+  <xacro:arg name="c920_yaw"   default="0.0"/>
+
+  <!-- C270 (secondary, angled to the left ~45°) -->
+  <xacro:arg name="c270_x"     default="0.060"/>
+  <xacro:arg name="c270_y"     default="0.035"/>
+  <xacro:arg name="c270_z"     default="0.135"/>
+  <xacro:arg name="c270_roll"  default="0.0"/>
+  <xacro:arg name="c270_pitch" default="0.0"/>
+  <xacro:arg name="c270_yaw"   default="0.7853981634"/> <!-- +pi/4 -->
+
+  <xacro:mono_camera
+      parent="base_link" name="camera_c920"
+      x="$(arg c920_x)" y="$(arg c920_y)" z="$(arg c920_z)"
+      roll="$(arg c920_roll)" pitch="$(arg c920_pitch)" yaw="$(arg c920_yaw)"
+      width="1280" height="720" hfov="1.361" update_rate="30.0"/>
+
+  <xacro:mono_camera
+      parent="base_link" name="camera_c270"
+      x="$(arg c270_x)" y="$(arg c270_y)" z="$(arg c270_z)"
+      roll="$(arg c270_roll)" pitch="$(arg c270_pitch)" yaw="$(arg c270_yaw)"
+      width="640" height="480" hfov="1.047" update_rate="30.0"/>
+
+</robot>
