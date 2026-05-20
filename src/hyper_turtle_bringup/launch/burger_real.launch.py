@@ -1,23 +1,19 @@
 """Real TurtleBot3 Burger launch with two Logitech webcams + LDS-01.
 
-Runs on the SBC. Composition:
-- robot_state_publisher with our burger_cams.urdf.xacro (publishes /tf_static for all frames,
-  including camera_c920/c270 _link and _optical_frame). The Burger base + LDS frames also
-  come from this URDF, so we don't include turtlebot3_bringup's robot_state_publisher.
-- turtlebot3_node (OpenCR driver — /odom, /joint_states, /tf base->odom, /imu)
-- hlds_laser_publisher (LDS-01 driver — /scan)
-- usb_cam x 2 (C920, C270) — /camera_c*/image_raw, /image_raw/compressed, /camera_info
-- v4l2-ctl normalization triggered 5s after start (brightness/gain/exposure_dynamic_framerate)
+Composition:
+- Includes turtlebot3_bringup robot.launch.py — provides robot_state_publisher (with TB3 URDF),
+  turtlebot3_node (OpenCR: /odom, /imu, /joint_states, /tf), and the LDS driver (/scan).
+  We do NOT replicate those nodes ourselves because turtlebot3_node needs ~10 static parameters
+  that the standard launch loads from share/turtlebot3_bringup/param/<model>.yaml.
+- Adds 4 static_transform_publisher nodes for the camera frames, since the stock TB3 URDF
+  doesn't include them.
+- usb_cam x 2 (C920, C270) with our yamls.
+- TimerAction(+5s): v4l2-ctl to enforce brightness/gain/exposure_dynamic_framerate.
 
-Topics for bag recording:
-  /camera_c920/image_raw/compressed
-  /camera_c920/camera_info
-  /camera_c270/image_raw/compressed
-  /camera_c270/camera_info
-  /scan
-  /odom
-  /tf
-  /tf_static
+Bag-recording topics: /camera_c{920,270}/image_raw/compressed, /camera_c{920,270}/camera_info,
+                     /scan, /odom, /tf, /tf_static
+
+Camera mount poses are exposed as launch arguments; defaults match the sim model.
 """
 
 import os
@@ -26,11 +22,12 @@ from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
     ExecuteProcess,
+    IncludeLaunchDescription,
     TimerAction,
 )
-from launch.substitutions import LaunchConfiguration, Command
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch_ros.parameter_descriptions import ParameterValue
 
 
 def generate_launch_description():
@@ -50,57 +47,60 @@ def generate_launch_description():
     c270_pitch = LaunchConfiguration('c270_pitch', default='0.0')
     c270_yaw = LaunchConfiguration('c270_yaw', default='0.7853981634')
 
-    pkg_description = get_package_share_directory('hyper_turtle_description')
     pkg_bringup = get_package_share_directory('hyper_turtle_bringup')
+    pkg_tb3_bringup = get_package_share_directory('turtlebot3_bringup')
 
-    urdf_path = os.path.join(pkg_description, 'urdf', 'burger_cams.urdf.xacro')
     usb_cam_c920_yaml = os.path.join(pkg_bringup, 'config', 'usb_cam_c920.yaml')
     usb_cam_c270_yaml = os.path.join(pkg_bringup, 'config', 'usb_cam_c270.yaml')
+    tb3_robot_launch = os.path.join(pkg_tb3_bringup, 'launch', 'robot.launch.py')
 
-    robot_state_publisher = Node(
-        package='robot_state_publisher',
-        executable='robot_state_publisher',
-        name='robot_state_publisher',
-        output='both',
-        parameters=[{
-            'use_sim_time': use_sim_time,
-            'robot_description': ParameterValue(Command([
-                'xacro ', urdf_path,
-                ' c920_x:=', c920_x,
-                ' c920_y:=', c920_y,
-                ' c920_z:=', c920_z,
-                ' c920_roll:=', c920_roll,
-                ' c920_pitch:=', c920_pitch,
-                ' c920_yaw:=', c920_yaw,
-                ' c270_x:=', c270_x,
-                ' c270_y:=', c270_y,
-                ' c270_z:=', c270_z,
-                ' c270_roll:=', c270_roll,
-                ' c270_pitch:=', c270_pitch,
-                ' c270_yaw:=', c270_yaw,
-            ]), value_type=str),
-        }],
+    tb3_bringup = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(tb3_robot_launch),
+        launch_arguments={'use_sim_time': use_sim_time}.items(),
     )
 
-    # TurtleBot3 OpenCR driver: /odom, /joint_states, /imu, /tf (odom->base_footprint), motor cmd
-    turtlebot3_node = Node(
-        package='turtlebot3_node',
-        executable='turtlebot3_ros',
-        name='turtlebot3_node',
-        output='screen',
+    # ROS optical convention rotation: rpy(-pi/2, 0, -pi/2) = (-1.5707963, 0, -1.5707963)
+    optical_rpy = ['--roll', '-1.5707963', '--pitch', '0', '--yaw', '-1.5707963']
+
+    stp_c920_link = Node(
+        package='tf2_ros', executable='static_transform_publisher',
+        name='stp_camera_c920_link',
+        arguments=[
+            '--x', c920_x, '--y', c920_y, '--z', c920_z,
+            '--roll', c920_roll, '--pitch', c920_pitch, '--yaw', c920_yaw,
+            '--frame-id', 'base_link', '--child-frame-id', 'camera_c920_link',
+        ],
         parameters=[{'use_sim_time': use_sim_time}],
     )
-
-    # LDS-01 driver: /scan
-    hlds_laser = Node(
-        package='hls_lfcd_lds_driver',
-        executable='hlds_laser_publisher',
-        name='hlds_laser_publisher',
-        output='screen',
-        parameters=[{
-            'port': '/dev/ttyUSB0',
-            'frame_id': 'base_scan',
-        }],
+    stp_c920_optical = Node(
+        package='tf2_ros', executable='static_transform_publisher',
+        name='stp_camera_c920_optical',
+        arguments=[
+            '--x', '0', '--y', '0', '--z', '0', *optical_rpy,
+            '--frame-id', 'camera_c920_link',
+            '--child-frame-id', 'camera_c920_optical_frame',
+        ],
+        parameters=[{'use_sim_time': use_sim_time}],
+    )
+    stp_c270_link = Node(
+        package='tf2_ros', executable='static_transform_publisher',
+        name='stp_camera_c270_link',
+        arguments=[
+            '--x', c270_x, '--y', c270_y, '--z', c270_z,
+            '--roll', c270_roll, '--pitch', c270_pitch, '--yaw', c270_yaw,
+            '--frame-id', 'base_link', '--child-frame-id', 'camera_c270_link',
+        ],
+        parameters=[{'use_sim_time': use_sim_time}],
+    )
+    stp_c270_optical = Node(
+        package='tf2_ros', executable='static_transform_publisher',
+        name='stp_camera_c270_optical',
+        arguments=[
+            '--x', '0', '--y', '0', '--z', '0', *optical_rpy,
+            '--frame-id', 'camera_c270_link',
+            '--child-frame-id', 'camera_c270_optical_frame',
+        ],
+        parameters=[{'use_sim_time': use_sim_time}],
     )
 
     usb_cam_c920 = Node(
@@ -121,8 +121,7 @@ def generate_launch_description():
         output='screen',
     )
 
-    # Apply v4l2 controls that usb_cam parameters can't set reliably.
-    # Run a few seconds after start so the cameras are fully opened.
+    # Enforce v4l2 controls that usb_cam parameters can't set reliably on modern kernels.
     v4l2_normalize = TimerAction(
         period=5.0,
         actions=[
@@ -157,9 +156,11 @@ def generate_launch_description():
         DeclareLaunchArgument('c270_roll', default_value='0.0'),
         DeclareLaunchArgument('c270_pitch', default_value='0.0'),
         DeclareLaunchArgument('c270_yaw', default_value='0.7853981634'),
-        robot_state_publisher,
-        turtlebot3_node,
-        hlds_laser,
+        tb3_bringup,
+        stp_c920_link,
+        stp_c920_optical,
+        stp_c270_link,
+        stp_c270_optical,
         usb_cam_c920,
         usb_cam_c270,
         v4l2_normalize,
