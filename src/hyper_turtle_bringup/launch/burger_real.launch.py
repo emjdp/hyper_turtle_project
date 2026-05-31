@@ -126,14 +126,14 @@ def generate_launch_description():
         period=5.0,
         actions=[
             ExecuteProcess(
-                cmd=['v4l2-ctl', '-d', '/dev/video2',
+                cmd=['v4l2-ctl', '-d', '/dev/video0',
                      '-c', 'brightness=128',
                      '-c', 'gain=0',
                      '-c', 'exposure_dynamic_framerate=0'],
                 output='screen',
             ),
             ExecuteProcess(
-                cmd=['v4l2-ctl', '-d', '/dev/video0',
+                cmd=['v4l2-ctl', '-d', '/dev/video2',
                      '-c', 'brightness=128',
                      '-c', 'gain=0',
                      '-c', 'exposure_dynamic_framerate=0'],
