@@ -10,7 +10,7 @@
 
 Hyper Turtle Project는 TurtleBot3 Burger에 Logitech C920/C270 웹캠 2대와 LDS-01 2D LiDAR를 결합해 실내 공간을 주행, 기록, 재구성하는 ROS 2 Jazzy 프로젝트입니다. 시뮬레이션에서 센서/TF/토픽 계약을 먼저 맞춘 뒤, 실물 로봇에서 조이스틱 주행과 rosbag 기록까지 검증했습니다.
 
-![Hyper Turtle front view](docs/images/readme_robot_front_odd_eye.jpg)
+![Hyper Turtle front view](docs/images/readme_robot_front_20260531_04.jpg)
 
 > 핵심 목표: 저가형 TurtleBot3와 USB 웹캠 2대로 "주행 가능한 데이터 수집 로봇"을 만들고, LiDAR/odom/카메라 bag을 후처리해 시각적 3D map 결과까지 연결한다.
 
