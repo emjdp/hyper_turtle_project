@@ -188,6 +188,10 @@ ros2 run nav2_map_server map_saver_cli -f maps/test_map
 5. **실제 Nav2 및 SLAM 성능 테스트:**
    - 실제 환경에서 SLAM 성능 평가 및 Nav2 튜닝
 
+## 실물 로봇 조이스틱 실행 절차
+
+전원 체크, 로봇 bringup, PC 조이스틱 UDP 브리지, 카메라 2개/센서 bag 기록 절차는 [docs/real_robot_joystick_runbook.md](docs/real_robot_joystick_runbook.md)에 정리되어 있습니다.
+
 ---
 
 ## 향후 계획 (TODO)

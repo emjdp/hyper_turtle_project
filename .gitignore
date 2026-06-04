@@ -4,9 +4,11 @@ log/
 .venv/
 venv/
 bags/
+outputs/
 *.log
 *.pyc
 __pycache__/
 .vscode/
 .idea/
 .claude/
+final_code/

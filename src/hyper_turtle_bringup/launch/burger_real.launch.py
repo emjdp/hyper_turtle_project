@@ -45,7 +45,7 @@ def generate_launch_description():
     c270_z = LaunchConfiguration('c270_z', default='0.135')
     c270_roll = LaunchConfiguration('c270_roll', default='0.0')
     c270_pitch = LaunchConfiguration('c270_pitch', default='0.0')
-    c270_yaw = LaunchConfiguration('c270_yaw', default='0.7853981634')
+    c270_yaw = LaunchConfiguration('c270_yaw', default='0.0')
 
     pkg_bringup = get_package_share_directory('hyper_turtle_bringup')
     pkg_tb3_bringup = get_package_share_directory('turtlebot3_bringup')
@@ -155,7 +155,7 @@ def generate_launch_description():
         DeclareLaunchArgument('c270_z', default_value='0.135'),
         DeclareLaunchArgument('c270_roll', default_value='0.0'),
         DeclareLaunchArgument('c270_pitch', default_value='0.0'),
-        DeclareLaunchArgument('c270_yaw', default_value='0.7853981634'),
+        DeclareLaunchArgument('c270_yaw', default_value='0.0'),
         tb3_bringup,
         stp_c920_link,
         stp_c920_optical,
