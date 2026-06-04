@@ -20,8 +20,8 @@ Hyper Turtle Project는 TurtleBot3 Burger에 Logitech C920/C270 웹캠 2대와 L
 
 | Real robot | Simulation stack |
 | :---: | :---: |
-| ![Real robot drive](extracted_images/20260531_230324_github_23s.gif) | [![Simulation overview](docs/images/readme_sim_three_windows.jpg)](extracted_images/hyper_turtle_3_windows_github.webm) |
-| Joystick-driven TurtleBot3 Burger with dual webcams and LDS-01 | Click the preview to play the WebM demo |
+| ![Real robot drive](extracted_images/20260531_230324_github_23s.gif) | ![Simulation overview](docs/images/readme_sim_three_windows.gif) |
+| Joystick-driven TurtleBot3 Burger with dual webcams and LDS-01 | Gazebo, RViz, and dual camera streams running together |
 
 | Edge-textured 3D map | LiDAR floorplan | C920 image overlay |
 | :---: | :---: | :---: |
@@ -29,7 +29,7 @@ Hyper Turtle Project는 TurtleBot3 Burger에 Logitech C920/C270 웹캠 2대와 L
 
 Additional result snapshots:
 
-- [Simulation WebM: Gazebo + RViz + camera feeds](extracted_images/hyper_turtle_3_windows_github.webm)
+- [Simulation GIF: Gazebo + RViz + camera feeds](docs/images/readme_sim_three_windows.gif)
 - [Real robot drive GIF](extracted_images/20260531_230324_github_23s.gif)
 - [Image-stitched 3D map preview](extracted_images/Image_stitched_3D_map_preview.jpeg)
 - [Multi-node stitched tour](extracted_images/Multi_node_stitched_tour.jpeg)
