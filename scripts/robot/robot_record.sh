@@ -9,15 +9,15 @@
 #
 # Prerequisite: bringup (and the UDP bridge, if you want to drive) must already
 # be running on the robot:
-#   ./robot_bringup.sh        # terminal A
-#   ./robot_cmd_bridge.sh     # terminal B (only needed to drive via joystick)
-#   ./robot_record.sh         # terminal C  <-- this script
+#   scripts/robot/robot_bringup.sh        # terminal A
+#   scripts/robot/robot_cmd_bridge.sh     # terminal B (only needed to drive via joystick)
+#   scripts/robot/robot_record.sh         # terminal C  <-- this script
 #
 # Usage:
-#   ./robot_record.sh [bag_prefix]
+#   scripts/robot/robot_record.sh [bag_prefix]
 # Examples:
-#   ./robot_record.sh
-#   ./robot_record.sh free_run
+#   scripts/robot/robot_record.sh
+#   scripts/robot/robot_record.sh free_run
 set -euo pipefail
 
 # ── Edit here if your robot changes ─────────────────────────────────────────
@@ -70,5 +70,5 @@ EOF
 
 echo "[pc] ssh target : ${ROBOT_SSH}"
 echo "[pc] bag prefix : ${BAG_PREFIX}"
-echo "[pc] Press Ctrl+C to stop recording. Then: ./fetch_turtlebot_bag.sh"
+echo "[pc] Press Ctrl+C to stop recording. Then: scripts/robot/fetch_turtlebot_bag.sh"
 exec ssh -t "${ROBOT_SSH}" "${REMOTE}"

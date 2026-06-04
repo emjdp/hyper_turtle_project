@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: ./run_pc_joystick.sh [turtlebot_ip] [joy_device_id]
+Usage: scripts/robot/run_pc_joystick.sh [turtlebot_ip] [joy_device_id]
 
 Runs everything needed on the laptop side:
 - local ROS joy_node reads the Xbox controller
@@ -33,7 +33,7 @@ if [[ -z "$ROBOT_IP" ]]; then
 fi
 if [[ -z "$ROBOT_IP" ]]; then
   echo "[pc] could not resolve robot IP from ssh alias '$ROBOT_SSH'." >&2
-  echo "[pc] pass it explicitly: ./run_pc_joystick.sh <turtlebot_ip>" >&2
+  echo "[pc] pass it explicitly: scripts/robot/run_pc_joystick.sh <turtlebot_ip>" >&2
   exit 1
 fi
 JOY_DEVICE_ID="${2:-0}"
@@ -41,7 +41,8 @@ UDP_PORT="${UDP_PORT:-9090}"
 ROS_LOCAL_DOMAIN="${ROS_LOCAL_DOMAIN:-77}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+cd "$PROJECT_ROOT"
 
 set +u
 source /opt/ros/jazzy/setup.bash

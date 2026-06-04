@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # robot_cmd_bridge.sh
 # Starts the UDP -> /cmd_vel bridge ON THE ROBOT, over SSH. The PC joystick
-# sender (run_pc_joystick.sh) sends UDP packets here; this publishes
+# sender (scripts/robot/run_pc_joystick.sh) sends UDP packets here; this publishes
 # TwistStamped /cmd_vel so the TurtleBot moves. Ctrl+C stops it.
 #
 # The bridge logic and tuning live in udp_cmd_vel_bridge.py (one place to edit).
-# Make sure that file is on the robot first:  ./deploy_to_robot.sh
+# Make sure that file is on the robot first:  scripts/robot/deploy_to_robot.sh
 #
 # Usage:
-#   ./robot_cmd_bridge.sh
+#   scripts/robot/robot_cmd_bridge.sh
 set -euo pipefail
 
 # ── Edit here if your robot changes ─────────────────────────────────────────

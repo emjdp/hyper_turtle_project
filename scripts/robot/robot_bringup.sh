@@ -4,11 +4,11 @@
 # Keep this terminal open while you work; Ctrl+C stops bringup cleanly.
 #
 # Usage:
-#   ./robot_bringup.sh
+#   scripts/robot/robot_bringup.sh
 #
 # Optional: to enable PC<->robot DDS discovery set PC_STATIC_PEER to your PC IP.
 # It is NOT needed for the joystick (UDP) or for on-robot bag recording.
-#   PC_STATIC_PEER=172.21.5.40 ./robot_bringup.sh
+#   PC_STATIC_PEER=172.21.5.40 scripts/robot/robot_bringup.sh
 set -euo pipefail
 
 # ── Edit here if your robot changes ─────────────────────────────────────────

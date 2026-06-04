@@ -5,10 +5,10 @@
 # robot_record.sh), falling back to the newest bag directory.
 #
 # Usage:
-#   ./fetch_turtlebot_bag.sh [bag_dir_or_name]
+#   scripts/robot/fetch_turtlebot_bag.sh [bag_dir_or_name]
 # Examples:
-#   ./fetch_turtlebot_bag.sh
-#   ./fetch_turtlebot_bag.sh building_scan_20260531_123456
+#   scripts/robot/fetch_turtlebot_bag.sh
+#   scripts/robot/fetch_turtlebot_bag.sh building_scan_20260531_123456
 set -euo pipefail
 
 # ── Edit here if your robot changes ─────────────────────────────────────────
@@ -23,7 +23,8 @@ fi
 
 BAG_ARG="${1:-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+cd "$PROJECT_ROOT"
 mkdir -p bags
 
 if [[ -z "$BAG_ARG" ]]; then

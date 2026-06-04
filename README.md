@@ -50,9 +50,12 @@ Heavy artifacts such as `bags/`, `outputs/`, `build/`, `install/`, and `final_co
 | `src/hyper_turtle_mapping` | SLAM Toolbox launch and map saving workflow |
 | `src/hyper_turtle_navigation` | Nav2 follow-up notes and future navigation work |
 | `src/hyper_turtle_perception` | Perception placeholder for future graffiti/damage detection |
+| `scripts/robot` | Real robot deploy, SSH setup, bringup, joystick bridge, recording, bag fetch scripts |
+| `scripts/pc` | PC/WSL joystick helper scripts |
 | `docs/real_robot_joystick_runbook.md` | Real robot power, SSH, bringup, UDP joystick, bag record/fetch runbook |
 | `docs/vision_data_handoff.md` | Bag topic, TF, timestamp, and camera pose contract for vision/post-processing |
 | `docs/webcams_lds01_calibration_plan.md` | Dual webcam + LDS-01 integration and calibration plan |
+| `docs/report` | Report/presentation artifacts moved out of the repository root |
 | `extracted_images/` | Curated result images, GIFs, and demo media for README/reporting |
 
 ---
@@ -99,7 +102,7 @@ Heavy artifacts such as `bags/`, `outputs/`, `build/`, `install/`, and `final_co
                        Laptop / PC
         +---------------------------------------+
         | Gazebo Sim / RViz / joy_node          |
-        | run_pc_joystick.sh                    |
+        | scripts/robot/run_pc_joystick.sh      |
         |  /joy -> UDP packets                  |
         +--------------------+------------------+
                              |
@@ -107,15 +110,15 @@ Heavy artifacts such as `bags/`, `outputs/`, `build/`, `install/`, and `final_co
                              v
                     TurtleBot3 Burger / RPi
         +---------------------------------------+
-        | robot_bringup.sh                      |
+        | scripts/robot/robot_bringup.sh        |
         |  turtlebot3_node  -> /odom /imu /tf   |
         |  LDS-01           -> /scan            |
         |  usb_cam x 2      -> /camera_c*/...   |
         |                                       |
-        | robot_cmd_bridge.sh                   |
+        | scripts/robot/robot_cmd_bridge.sh     |
         |  UDP joystick -> TwistStamped /cmd_vel|
         |                                       |
-        | robot_record.sh                       |
+        | scripts/robot/robot_record.sh         |
         |  ros2 bag record standard topic set   |
         +--------------------+------------------+
                              |
@@ -340,28 +343,28 @@ For the full operational checklist, use [docs/real_robot_joystick_runbook.md](do
 
 ### 1. Configure SSH
 
-Edit `setup_rpi_ssh.sh` if the robot IP changed, then run:
+Edit `scripts/robot/setup_rpi_ssh.sh` if the robot IP changed, then run:
 
 ```bash
-./setup_rpi_ssh.sh
+scripts/robot/setup_rpi_ssh.sh
 ssh rpi5
 ```
 
 The scripts use `ROBOT_SSH=rpi5` by default. You can override it:
 
 ```bash
-ROBOT_SSH=ubuntu@172.21.105.146 ./robot_bringup.sh
+ROBOT_SSH=ubuntu@172.21.105.146 scripts/robot/robot_bringup.sh
 ```
 
 ### 2. Deploy Code to the Robot
 
 ```bash
-./deploy_to_robot.sh
+scripts/robot/deploy_to_robot.sh
 ```
 
 This syncs:
 
-- `udp_cmd_vel_bridge.py`
+- `scripts/robot/udp_cmd_vel_bridge.py` to the robot workspace root
 - `src/`
 
 It intentionally does not sync `bags/`, `outputs/`, `build/`, `install/`, or other generated artifacts.
@@ -372,24 +375,24 @@ Open four terminals on the PC.
 
 ```bash
 # Terminal A: TurtleBot3 bringup, LDS-01, OpenCR, C920, C270
-./robot_bringup.sh
+scripts/robot/robot_bringup.sh
 
 # Terminal B: UDP joystick -> TwistStamped /cmd_vel bridge on the robot
-./robot_cmd_bridge.sh
+scripts/robot/robot_cmd_bridge.sh
 
 # Terminal C: local joystick reader + UDP sender
-./run_pc_joystick.sh
+scripts/robot/run_pc_joystick.sh
 
 # Terminal D: bag recording on the robot
-./robot_record.sh building_scan
+scripts/robot/robot_record.sh building_scan
 ```
 
-Stop `robot_record.sh` with `Ctrl+C`. The script keeps `ros2 bag record` in the foreground so the bag closes cleanly.
+Stop `scripts/robot/robot_record.sh` with `Ctrl+C`. The script keeps `ros2 bag record` in the foreground so the bag closes cleanly.
 
 ### 4. Fetch the Latest Bag
 
 ```bash
-./fetch_turtlebot_bag.sh
+scripts/robot/fetch_turtlebot_bag.sh
 ```
 
 The script reads `.last_bag` from the robot, downloads the bag into local `bags/`, and runs:
@@ -553,13 +556,13 @@ Keep source, launch files, configs, documentation, and curated result media in G
 |---|---|
 | Robot board is on but wheels do not move | Check battery/OpenCR motor power. USB power alone can keep sensors alive while motors remain unavailable. |
 | `/cmd_vel` is published but robot does not move | Confirm message type is `TwistStamped`; run `ros2 topic info /cmd_vel -v`. |
-| PC joystick does not reach robot | Use `robot_cmd_bridge.sh` + `run_pc_joystick.sh`; this avoids DDS discovery issues by sending joystick packets over UDP. |
+| PC joystick does not reach robot | Use `scripts/robot/robot_cmd_bridge.sh` + `scripts/robot/run_pc_joystick.sh`; this avoids DDS discovery issues by sending joystick packets over UDP. |
 | `/camera_c920/...` or `/camera_c270/...` missing | Check `v4l2-ctl --list-devices`, device paths in `usb_cam_c*.yaml`, and USB bandwidth. |
 | Camera FPS drops or image is black | Lower resolution/FPS, use MJPEG/compressed transport, and check `v4l2-ctl -d /dev/video* --all`. |
-| Bag is corrupt after stopping | Stop `robot_record.sh` with `Ctrl+C`; avoid background `pkill`-style cleanup for `ros2 bag record`. |
+| Bag is corrupt after stopping | Stop `scripts/robot/robot_record.sh` with `Ctrl+C`; avoid background `pkill`-style cleanup for `ros2 bag record`. |
 | RViz TF tree does not show camera frames | Rebuild, source `install/setup.bash`, and verify `base_link -> camera_*_optical_frame` with `tf2_echo`. |
 | SLAM map drifts | Slow down the robot, avoid sudden rotations, and keep the scan area short enough for wheel odom drift. |
-| `joy_node` opens the wrong controller | Use `ros2 run joy joy_enumerate_devices`; pass the ROS device ID as `./run_pc_joystick.sh <robot_ip> <joy_device_id>`. |
+| `joy_node` opens the wrong controller | Use `ros2 run joy joy_enumerate_devices`; pass the ROS device ID as `scripts/robot/run_pc_joystick.sh <robot_ip> <joy_device_id>`. |
 
 ---
 

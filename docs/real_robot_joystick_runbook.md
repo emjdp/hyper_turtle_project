@@ -26,35 +26,35 @@
 특히 녹화는 SIGINT가 `ros2 bag record`에 바로 가서 bag이 깨지지 않고 마감됩니다.
 
 > SSH 대상은 각 스크립트 상단 `ROBOT_SSH="rpi5"` 한 줄입니다. IP가 바뀌면
-> `setup_rpi_ssh.sh`의 `RPI_IP`만 고치고 다시 실행하면 `rpi5` alias가 갱신됩니다.
-> 브리지/녹화 로직을 바꾸려면 `udp_cmd_vel_bridge.py` 한 곳만 수정합니다.
+> `scripts/robot/setup_rpi_ssh.sh`의 `RPI_IP`만 고치고 다시 실행하면 `rpi5` alias가 갱신됩니다.
+> 브리지/녹화 로직을 바꾸려면 `scripts/robot/udp_cmd_vel_bridge.py` 한 곳만 수정합니다.
 
 먼저 한 번만 코드 동기화(브리지 파일이 로봇에 있어야 함):
 
 ```bash
-./deploy_to_robot.sh
+scripts/robot/deploy_to_robot.sh
 ```
 
 그 다음 PC에서 터미널을 나눠 실행합니다.
 
 ```bash
 # 터미널 A (로봇): bringup — LDS/OpenCR/카메라 2개
-./robot_bringup.sh
+scripts/robot/robot_bringup.sh
 
 # 터미널 B (로봇): UDP -> /cmd_vel 브리지 (조이스틱으로 주행할 때만 필요)
-./robot_cmd_bridge.sh
+scripts/robot/robot_cmd_bridge.sh
 
 # 터미널 C (PC): 조이스틱 읽기 + UDP 전송 (IP 생략 시 rpi5에서 자동 해석)
-./run_pc_joystick.sh
+scripts/robot/run_pc_joystick.sh
 
 # 터미널 D (로봇): bag 녹화 — 끝낼 때 Ctrl+C 로 깨끗하게 마감
-./robot_record.sh                 # 또는: ./robot_record.sh free_run
+scripts/robot/robot_record.sh                 # 또는: scripts/robot/robot_record.sh free_run
 ```
 
 녹화를 멈춘 뒤 로컬로 가져오기 (`.last_bag` 기준 최신 bag 자동 선택):
 
 ```bash
-./fetch_turtlebot_bag.sh
+scripts/robot/fetch_turtlebot_bag.sh
 ```
 
 녹화 토픽 세트: `/scan /odom /tf /tf_static /joint_states /cmd_vel /imu`
