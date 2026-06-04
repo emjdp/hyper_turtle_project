@@ -117,40 +117,104 @@ Role notes:
 
 ---
 
-## System Overview
+## System Architecture
 
-```text
-                       Laptop / PC
-        +---------------------------------------+
-        | Gazebo Sim / RViz / joy_node          |
-        | scripts/robot/run_pc_joystick.sh      |
-        |  /joy -> UDP packets                  |
-        +--------------------+------------------+
-                             |
-                             | UDP :9090
-                             v
-                    TurtleBot3 Burger / RPi
-        +---------------------------------------+
-        | scripts/robot/robot_bringup.sh        |
-        |  turtlebot3_node  -> /odom /imu /tf   |
-        |  LDS-01           -> /scan            |
-        |  usb_cam x 2      -> /camera_c*/...   |
-        |                                       |
-        | scripts/robot/robot_cmd_bridge.sh     |
-        |  UDP joystick -> TwistStamped /cmd_vel|
-        |                                       |
-        | scripts/robot/robot_record.sh         |
-        |  ros2 bag record standard topic set   |
-        +--------------------+------------------+
-                             |
-                             | rsync
-                             v
-        +---------------------------------------+
-        | bags/                                 |
-        | offline mapping, image extraction,    |
-        | LiDAR/pose/image reconstruction       |
-        +---------------------------------------+
+```mermaid
+flowchart LR
+    %% Hyper Turtle Project - System Architecture
+
+    subgraph SIM["Simulation Environment"]
+        GZ["Gazebo Sim"]
+        SIMTB["TurtleBot3 Burger Model"]
+        SIMCAM["Simulated Dual Cameras"]
+        SIMRVIZ["RViz2 Visualization"]
+
+        GZ --> SIMTB
+        SIMTB --> SIMCAM
+        SIMTB -->|"simulated /scan, /odom, /tf"| SIMRVIZ
+        SIMCAM -->|"simulated camera topics"| SIMRVIZ
+    end
+
+    subgraph PC["Operator PC"]
+        JOY["Joystick Controller"]
+        JOYBRIDGE["UDP Joystick Bridge<br/>scripts/robot/run_pc_joystick.sh"]
+        DEPLOY["SSH / Deploy Scripts"]
+        RVIZ["RViz2 Monitoring"]
+        FETCH["Bag Fetch<br/>scripts/robot/fetch_turtlebot_bag.sh"]
+    end
+
+    subgraph ROBOTROS["Robot-side ROS 2 Workflow"]
+        BRINGUP["TurtleBot3 Bringup<br/>scripts/robot/robot_bringup.sh"]
+        CAMPUB["USB Camera Publishers"]
+        JOYRX["UDP Command Receiver<br/>TwistStamped /cmd_vel"]
+        BAGREC["rosbag2 Recorder<br/>scripts/robot/robot_record.sh"]
+    end
+
+    subgraph ROBOT["Real Robot: TurtleBot3 Burger"]
+        LIDAR["LDS-01 LiDAR<br/>/scan"]
+        ODOM["Wheel Odometry + IMU<br/>/odom, /imu"]
+        TF["TF Tree<br/>/tf, /tf_static"]
+        CAM920["Logitech C920<br/>/camera_c920/..."]
+        CAM270["Logitech C270<br/>/camera_c270/..."]
+    end
+
+    subgraph BAG["Recorded Sensor Data: rosbag2"]
+        BAGDATA["rosbag2 Directory<br/>bags/recorded_run"]
+        BAGSCAN["/scan"]
+        BAGODOM["/odom"]
+        BAGTF["/tf, /tf_static"]
+        BAGIMG["/camera_c920/image_raw/compressed<br/>/camera_c270/image_raw/compressed"]
+        BAGINFO["/camera_c920/camera_info<br/>/camera_c270/camera_info"]
+    end
+
+    subgraph OFFLINE["Offline Processing / Handoff"]
+        FLOOR["LiDAR-based Floorplan"]
+        POSE["Camera Pose Handoff<br/>T_world_camera_optical(t)"]
+        RECON["Visual Reconstruction Support<br/>Edge-textured 3D Map"]
+    end
+
+    JOY -->|"joystick input"| JOYBRIDGE
+    JOYBRIDGE -->|"UDP :9090 command stream"| JOYRX
+    DEPLOY -->|"SSH launch / sync"| BRINGUP
+    DEPLOY -->|"camera launch / setup"| CAMPUB
+
+    BRINGUP --> LIDAR
+    BRINGUP --> ODOM
+    BRINGUP --> TF
+    CAMPUB --> CAM920
+    CAMPUB --> CAM270
+    JOYRX -->|"motion command"| BRINGUP
+
+    LIDAR --> BAGSCAN
+    ODOM --> BAGODOM
+    TF --> BAGTF
+    CAM920 --> BAGIMG
+    CAM270 --> BAGIMG
+    CAM920 --> BAGINFO
+    CAM270 --> BAGINFO
+
+    BAGSCAN --> BAGREC
+    BAGODOM --> BAGREC
+    BAGTF --> BAGREC
+    BAGIMG --> BAGREC
+    BAGINFO --> BAGREC
+    BAGREC -->|"record"| BAGDATA
+    FETCH -->|"rsync from robot"| BAGDATA
+
+    RVIZ -.->|"monitor"| LIDAR
+    RVIZ -.->|"monitor"| ODOM
+    RVIZ -.->|"monitor"| TF
+    RVIZ -.->|"monitor"| CAM920
+    RVIZ -.->|"monitor"| CAM270
+
+    BAGDATA --> FLOOR
+    BAGDATA --> POSE
+    BAGDATA --> RECON
+    FLOOR --> RECON
+    POSE --> RECON
 ```
+
+The project connects simulation, real TurtleBot3 Burger operation, sensor recording, and offline visual reconstruction through a ROS 2-based workflow. The real robot records LiDAR, odometry, TF, IMU, and dual-camera data into rosbag2. The recorded data is then used for LiDAR-based floorplan generation, camera pose handoff, and visual reconstruction support.
 
 ### TF Tree
 
