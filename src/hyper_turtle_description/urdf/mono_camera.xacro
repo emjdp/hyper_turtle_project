@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <xacro:macro name="mono_camera"
+               params="parent name x y z roll pitch yaw
+                       width:=640 height:=480 hfov:=1.047 update_rate:=15.0">
+
+    <joint name="${name}_joint" type="fixed">
+      <parent link="${parent}"/>
+      <child link="${name}_link"/>
+      <origin xyz="${x} ${y} ${z}" rpy="${roll} ${pitch} ${yaw}"/>
+    </joint>
+
+    <link name="${name}_link">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.025 0.06 0.025"/>
+        </geometry>
+        <material name="webcam_dark">
+          <color rgba="0.05 0.05 0.05 1"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="0.025 0.06 0.025"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="0.05"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <inertia ixx="1e-5" ixy="0" ixz="0" iyy="1e-5" iyz="0" izz="1e-5"/>
+      </inertial>
+    </link>
+
+    <!-- ROS optical convention: z forward, x right, y down -->
+    <joint name="${name}_optical_joint" type="fixed">
+      <parent link="${name}_link"/>
+      <child link="${name}_optical_frame"/>
+      <origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}"/>
+    </joint>
+    <link name="${name}_optical_frame"/>
+
+    <gazebo reference="${name}_link">
+      <sensor name="${name}_sensor" type="camera">
+        <always_on>1</always_on>
+        <update_rate>${update_rate}</update_rate>
+        <visualize>true</visualize>
+        <topic>${name}/image_raw</topic>
+        <gz_frame_id>${name}_optical_frame</gz_frame_id>
+        <camera>
+          <camera_info_topic>${name}/camera_info</camera_info_topic>
+          <horizontal_fov>${hfov}</horizontal_fov>
+          <image>
+            <width>${width}</width>
+            <height>${height}</height>
+            <format>RGB_INT8</format>
+          </image>
+          <clip>
+            <near>0.05</near>
+            <far>15.0</far>
+          </clip>
+          <optical_frame_id>${name}_optical_frame</optical_frame_id>
+        </camera>
+      </sensor>
+    </gazebo>
+
+  </xacro:macro>
+</robot>
