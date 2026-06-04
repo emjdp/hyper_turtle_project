@@ -29,12 +29,17 @@ sudo apt install -y \
   ros-jazzy-rviz2 \
   ros-jazzy-joy \
   ros-jazzy-teleop-twist-joy \
+  ros-jazzy-usb-cam \
+  ros-jazzy-image-transport-plugins \
+  ros-jazzy-camera-calibration \
   python3-colcon-common-extensions \
   python3-rosdep \
   python3-venv \
   python3-vcstool \
   jstest-gtk \
   joystick \
+  v4l-utils \
+  sshpass \
   rsync
 
 # 3. rosdep 초기화 및 업데이트 (ROS 패키지 의존성 자동 관리)

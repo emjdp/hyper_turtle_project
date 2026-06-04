@@ -12,8 +12,12 @@
   <depend>hyper_turtle_description</depend>
   <depend>ros_gz_sim</depend>
   <depend>ros_gz_bridge</depend>
+  <depend>ros_gz_image</depend>
   <depend>robot_state_publisher</depend>
   <depend>rviz2</depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>turtlebot3_bringup</exec_depend>
+  <exec_depend>usb_cam</exec_depend>
   <exec_depend>hyper_turtle_control</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>

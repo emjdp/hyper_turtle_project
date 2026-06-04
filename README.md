@@ -1,20 +1,186 @@
 # Hyper Turtle Project
 
-TurtleBot3 Burger 기반 건물 스캔 및 그래피티 탐지 로봇 프로젝트입니다.
+### TurtleBot3 Burger + Dual Webcams + LDS-01 for indoor scan, mapping, and visual reconstruction
 
+[![ROS 2](https://img.shields.io/badge/ROS%202-Jazzy-blue?logo=ros)](https://docs.ros.org/en/jazzy/)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04-orange?logo=ubuntu)](https://releases.ubuntu.com/24.04/)
+[![Gazebo](https://img.shields.io/badge/Gazebo-Sim%20%7C%20Harmonic-black?logo=gazebo)](https://gazebosim.org/)
+[![Robot](https://img.shields.io/badge/Robot-TurtleBot3%20Burger-2ea44f)](https://emanual.robotis.com/docs/en/platform/turtlebot3/overview/)
+![License](https://img.shields.io/badge/License-Apache%202.0-green)
 
-## 작업 환경 및 의존성
+Hyper Turtle Project는 TurtleBot3 Burger에 Logitech C920/C270 웹캠 2대와 LDS-01 2D LiDAR를 결합해 실내 공간을 주행, 기록, 재구성하는 ROS 2 Jazzy 프로젝트입니다. 시뮬레이션에서 센서/TF/토픽 계약을 먼저 맞춘 뒤, 실물 로봇에서 조이스틱 주행과 rosbag 기록까지 검증했습니다.
 
-- ROS: ROS 2 Jazzy
-- 시뮬레이터: Gazebo Sim
-- Python: Ubuntu 24.04 기본 Python 3.12
+![Hyper Turtle front view](docs/images/readme_robot_front_odd_eye.jpg)
 
-### 필요 패키지 설치
-만약 관련 ROS 2 패키지가 설치되어 있지 않다면 아래 명령을 통해 설치하세요:
+> 핵심 목표: 저가형 TurtleBot3와 USB 웹캠 2대로 "주행 가능한 데이터 수집 로봇"을 만들고, LiDAR/odom/카메라 bag을 후처리해 시각적 3D map 결과까지 연결한다.
+
+---
+
+## Results at a Glance
+
+| Real robot | Simulation stack |
+| :---: | :---: |
+| ![Real robot drive](extracted_images/20260531_230324_github_23s.gif) | ![Simulation overview](docs/images/readme_sim_three_windows.jpg) |
+| Joystick-driven TurtleBot3 Burger with dual webcams and LDS-01 | Gazebo, RViz, and dual camera streams running together |
+
+| Edge-textured 3D map | LiDAR floorplan | C920 image overlay |
+| :---: | :---: | :---: |
+| ![Edge textured 3D map](<extracted_images/최종_Edge_textured_3D_map_desktop.jpeg>) | ![LiDAR floorplan](<extracted_images/LiDAR_floorplan_primary_결과.jpeg>) | ![C920 map overlay](extracted_images/C920_photo_map_overlay.jpeg) |
+
+Additional result snapshots:
+
+- [Simulation WebM: Gazebo + RViz + camera feeds](extracted_images/hyper_turtle_3_windows_github.webm)
+- [Real robot drive GIF](extracted_images/20260531_230324_github_23s.gif)
+- [Image-stitched 3D map preview](extracted_images/Image_stitched_3D_map_preview.jpeg)
+- [Multi-node stitched tour](extracted_images/Multi_node_stitched_tour.jpeg)
+- [Desktop WebGL viewer result](<extracted_images/단일_stitched_WebGL_viewer_desktop.jpeg>)
+- [Mobile viewer result](<extracted_images/최종_Edge_textured_3D_map_mobile.jpeg>)
+
+Heavy artifacts such as `bags/`, `outputs/`, `build/`, `install/`, and `final_code/` are intentionally ignored. Reproducible commands and representative outputs are documented here; large run products should be regenerated locally.
+
+---
+
+## What This Repository Contains
+
+| Package / path | Role |
+|---|---|
+| `src/hyper_turtle_description` | TurtleBot3 Burger URDF/SDF variants, dual mono webcam model, camera TF, RViz config |
+| `src/hyper_turtle_bringup` | Gazebo simulation launch, real robot launch, ros_gz bridges, usb_cam configs |
+| `src/hyper_turtle_control` | Xbox/joystick teleoperation config |
+| `src/hyper_turtle_mapping` | SLAM Toolbox launch and map saving workflow |
+| `src/hyper_turtle_navigation` | Nav2 follow-up notes and future navigation work |
+| `src/hyper_turtle_perception` | Perception placeholder for future graffiti/damage detection |
+| `docs/real_robot_joystick_runbook.md` | Real robot power, SSH, bringup, UDP joystick, bag record/fetch runbook |
+| `docs/vision_data_handoff.md` | Bag topic, TF, timestamp, and camera pose contract for vision/post-processing |
+| `docs/webcams_lds01_calibration_plan.md` | Dual webcam + LDS-01 integration and calibration plan |
+| `extracted_images/` | Curated result images, GIFs, and demo media for README/reporting |
+
+---
+
+## Features
+
+**Robot and sensing**
+
+- TurtleBot3 Burger base with OpenCR, wheel odometry, IMU, `/scan`, `/odom`, `/tf`, and `/joint_states`.
+- Dual Logitech webcams:
+  - C920 primary camera: `/camera_c920/image_raw/compressed`
+  - C270 secondary camera: `/camera_c270/image_raw/compressed`
+- Camera optical frames follow ROS REP-103 optical convention.
+- Simulation and real robot use matching topic/frame names wherever possible.
+
+**Simulation**
+
+- Gazebo Sim world for indoor scan testing.
+- Dual forward-facing camera streams.
+- RViz visualization for robot model, TF, LaserScan, and camera images.
+- Xbox joystick teleop via `joy` + `teleop_twist_joy`.
+- Headless switches for low-power or remote environments.
+
+**Real robot operation**
+
+- SSH-based robot bringup scripts.
+- UDP joystick bridge for networks where DDS discovery between PC and robot is unreliable.
+- `TwistStamped /cmd_vel` publishing for TurtleBot3 Jazzy compatibility.
+- Clean `ros2 bag record` shutdown through a single foreground SSH process.
+- Bag fetch script that uses `.last_bag` and verifies with `ros2 bag info`.
+
+**Mapping and reconstruction**
+
+- SLAM Toolbox workflow for 2D mapping.
+- Bag contract for downstream vision teams.
+- Edge-textured visual 3D map snapshots based on LiDAR/odom structure and C920 image texture.
+- Documented limitations around uncalibrated CameraInfo, stereo scale instability, and odometry drift.
+
+---
+
+## System Overview
+
+```text
+                       Laptop / PC
+        +---------------------------------------+
+        | Gazebo Sim / RViz / joy_node          |
+        | run_pc_joystick.sh                    |
+        |  /joy -> UDP packets                  |
+        +--------------------+------------------+
+                             |
+                             | UDP :9090
+                             v
+                    TurtleBot3 Burger / RPi
+        +---------------------------------------+
+        | robot_bringup.sh                      |
+        |  turtlebot3_node  -> /odom /imu /tf   |
+        |  LDS-01           -> /scan            |
+        |  usb_cam x 2      -> /camera_c*/...   |
+        |                                       |
+        | robot_cmd_bridge.sh                   |
+        |  UDP joystick -> TwistStamped /cmd_vel|
+        |                                       |
+        | robot_record.sh                       |
+        |  ros2 bag record standard topic set   |
+        +--------------------+------------------+
+                             |
+                             | rsync
+                             v
+        +---------------------------------------+
+        | bags/                                 |
+        | offline mapping, image extraction,    |
+        | LiDAR/pose/image reconstruction       |
+        +---------------------------------------+
+```
+
+### TF Tree
+
+```text
+map (optional, SLAM)
+└── odom
+    └── base_footprint
+        └── base_link
+            ├── base_scan
+            ├── camera_c920_link
+            │   └── camera_c920_optical_frame
+            ├── camera_c270_link
+            │   └── camera_c270_optical_frame
+            ├── imu_link
+            ├── wheel_left_link
+            └── wheel_right_link
+```
+
+Current default camera mount values:
+
+| Transform | Translation `(x, y, z)` m | Rotation `(roll, pitch, yaw)` rad |
+|---|---:|---:|
+| `base_link -> camera_c920_link` | `(0.075, 0.000, 0.135)` | `(0, 0, 0)` |
+| `base_link -> camera_c270_link` | `(0.060, 0.035, 0.135)` | `(0, 0, 0)` |
+| `camera_*_link -> camera_*_optical_frame` | `(0, 0, 0)` | `(-pi/2, 0, -pi/2)` |
+
+The camera transforms are launch arguments, so the real mount can be corrected without changing source code.
+
+---
+
+## Requirements
+
+| Component | Version / target |
+|---|---|
+| OS | Ubuntu 24.04 LTS |
+| ROS | ROS 2 Jazzy |
+| Simulator | Gazebo Sim / Harmonic through `ros_gz` |
+| Robot | TurtleBot3 Burger |
+| Cameras | Logitech C920 + Logitech C270 |
+| LiDAR | TurtleBot3 LDS-01 |
+| Controller | Xbox-compatible joystick |
+| Python | Python 3.12 with venv using ROS site packages |
+
+Install everything with the project script:
+
+```bash
+./install_dependencies.sh
+```
+
+Or install the main ROS packages manually:
 
 ```bash
 sudo apt update
-sudo apt install \
+sudo apt install -y \
   ros-jazzy-turtlebot3 \
   ros-jazzy-turtlebot3-gazebo \
   ros-jazzy-turtlebot3-simulations \
@@ -30,97 +196,120 @@ sudo apt install \
   ros-jazzy-tf2-tools \
   ros-jazzy-rviz2 \
   ros-jazzy-joy \
-  ros-jazzy-teleop-twist-joy
-```
-
-### 팀 공통 Python 가상환경(.venv)
-
-`.venv` 디렉터리 자체는 GitHub에 올리지 않고, 아래 파일로 모든 팀원이 같은 환경을 재현합니다.
-
-- `setup_venv.sh`: ROS 2 Python 패키지를 함께 사용할 수 있도록 `--system-site-packages`로 `.venv` 생성
-- `requirements-dev.txt`: pip로 설치해야 하는 프로젝트 직접 의존성 관리
-
-전체 의존성 설치와 `.venv` 생성을 한 번에 실행하려면:
-
-```bash
-./install_dependencies.sh
-```
-
-이미 ROS 2 Jazzy 의존성이 설치되어 있고 Python 가상환경만 맞추려면:
-
-```bash
-./setup_venv.sh
-source /opt/ros/jazzy/setup.bash
-source .venv/bin/activate
+  ros-jazzy-teleop-twist-joy \
+  ros-jazzy-usb-cam \
+  ros-jazzy-image-transport-plugins \
+  ros-jazzy-camera-calibration \
+  python3-colcon-common-extensions \
+  python3-rosdep \
+  python3-venv \
+  python3-vcstool \
+  joystick \
+  jstest-gtk \
+  v4l-utils \
+  sshpass \
+  rsync
 ```
 
 ---
 
-## 빌드 명령
-
-프로젝트 루트 디렉터리에서 다음 명령을 실행하여 워크스페이스를 빌드합니다.
+## Build
 
 ```bash
 source /opt/ros/jazzy/setup.bash
+./setup_venv.sh
 source .venv/bin/activate
+
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y --rosdistro jazzy
+
 colcon build --symlink-install
+source install/setup.bash
 ```
 
-빌드 성공 후 패키지 인식 확인:
+Verify package discovery:
+
 ```bash
-source install/setup.bash
 ros2 pkg list | grep hyper_turtle
 ```
 
+Expected packages:
+
+```text
+hyper_turtle_bringup
+hyper_turtle_control
+hyper_turtle_description
+hyper_turtle_mapping
+hyper_turtle_perception
+```
+
 ---
 
-## 매뉴얼 스캔 Workflow
+## Quick Start: Dual Webcam Simulation
 
-다음은 터미널을 여러 개 열고 순차적으로 실행하여 수동으로 맵을 스캔하는 절차입니다.
+Launch Gazebo, robot model, dual camera bridge, RViz, and joystick teleop:
 
-**터미널 1: 시뮬레이션 실행**
 ```bash
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
-ros2 launch hyper_turtle_bringup burger_rgbd_sim.launch.py
+
+ros2 launch hyper_turtle_bringup burger_cams_sim.launch.py
 ```
 
-위 명령은 기본으로 Gazebo, 로봇, ROS-GZ bridge, Xbox 게임패드 teleop을 함께 실행합니다.
-`joy_device_id`는 `/dev/input/js*` 번호가 아니라 `ros2 run joy joy_enumerate_devices`에 표시되는 ID입니다.
-현재 연결된 Xbox 패드는 보통 `ID 0`으로 잡힙니다.
+Useful launch modes:
 
-Gazebo 화면만 확인하고 RViz는 끄려면:
 ```bash
-ros2 launch hyper_turtle_bringup burger_rgbd_sim.launch.py gazebo_gui:=true rviz:=false
+# RViz only, no Gazebo GUI
+ros2 launch hyper_turtle_bringup burger_cams_sim.launch.py gazebo_gui:=false
+
+# Gazebo only, no RViz
+ros2 launch hyper_turtle_bringup burger_cams_sim.launch.py rviz:=false
+
+# Sensors only, no joystick teleop
+ros2 launch hyper_turtle_bringup burger_cams_sim.launch.py xbox_teleop:=false
+
+# Override camera mount while testing TF
+ros2 launch hyper_turtle_bringup burger_cams_sim.launch.py c270_y:=0.04 c270_yaw:=0.0
 ```
 
-원격/저사양 환경에서 Gazebo GUI도 끄려면:
+Simulation screenshots:
+
+| Gazebo world | RViz sensors |
+| :---: | :---: |
+| ![Gazebo Simulation](docs/images/gazebo_turtlebot_cams.png) | ![RViz2 Visualization](docs/images/rviz_turtlebot_cams.png) |
+
+Camera stream demo:
+
+![Dual Webcam Stream Demo](docs/images/turtlebot_cams_demo.gif)
+
+---
+
+## Manual SLAM Workflow
+
+Terminal 1: launch the robot simulation.
+
 ```bash
-ros2 launch hyper_turtle_bringup burger_rgbd_sim.launch.py gazebo_gui:=false rviz:=false
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+ros2 launch hyper_turtle_bringup burger_cams_sim.launch.py
 ```
 
-컨트롤러 없이 센서/맵만 띄우려면:
-```bash
-ros2 launch hyper_turtle_bringup burger_rgbd_sim.launch.py xbox_teleop:=false
-```
+Terminal 2: start SLAM Toolbox.
 
-**터미널 2: SLAM 실행**
 ```bash
-cd /home/emjdp/hyper_Turtle_Project
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 ros2 launch hyper_turtle_mapping slam.launch.py use_sim_time:=true
 ```
 
-**터미널 3: rosbag 데이터 저장**
-수동 주행 중 맵 좌표, 센서 데이터, 게임패드 입력 등을 모두 기록합니다.
+Terminal 3: record a simulation bag.
+
 ```bash
-cd /home/emjdp/hyper_Turtle_Project
 source /opt/ros/jazzy/setup.bash
 source install/setup.bash
 mkdir -p bags
 
-ros2 bag record -o bags/manual_scan_1f_test_$(date +%Y%m%d_%H%M%S) \
+ros2 bag record -o bags/sim_scan_$(date +%Y%m%d_%H%M%S) \
   /scan \
   /odom \
   /tf \
@@ -128,81 +317,268 @@ ros2 bag record -o bags/manual_scan_1f_test_$(date +%Y%m%d_%H%M%S) \
   /joint_states \
   /joy \
   /cmd_vel \
-  /camera/color/image_raw \
-  /camera/color/camera_info \
-  /camera/depth/image_raw \
-  /camera/depth/camera_info \
-  /camera/points
+  /camera_c920/image_raw \
+  /camera_c920/image_raw/compressed \
+  /camera_c920/camera_info \
+  /camera_c270/image_raw \
+  /camera_c270/image_raw/compressed \
+  /camera_c270/camera_info
 ```
 
-### 맵 저장 명령
-스캔이 완료되면 터미널 5를 열고 맵을 저장합니다.
+Save a map:
+
 ```bash
-cd /home/emjdp/hyper_Turtle_Project
-source /opt/ros/jazzy/setup.bash
-source install/setup.bash
 mkdir -p maps
 ros2 run nav2_map_server map_saver_cli -f maps/test_map
 ```
 
 ---
 
-## 토픽 및 상태 확인 명령
+## Real Robot Operation
 
-* **기본 토픽 목록:** `ros2 topic list`
-* **카메라 토픽 목록:** `ros2 topic list | grep camera`
-* **토픽 출력(1회):**
-  - `ros2 topic echo /odom --once`
-  - `ros2 topic echo /scan --once`
-  - `ros2 topic echo /joy --once`
-  - `ros2 topic echo /cmd_vel --once`
-* **카메라 Update Rate 확인:**
-  - `ros2 topic hz /camera/color/image_raw`
-  - `ros2 topic hz /camera/depth/image_raw`
-* **TF 확인:**
-  - `ros2 run tf2_tools view_frames`
-  - `ros2 run tf2_ros tf2_echo base_link camera_link`
-  - `ros2 run tf2_ros tf2_echo base_link camera_color_optical_frame`
+For the full operational checklist, use [docs/real_robot_joystick_runbook.md](docs/real_robot_joystick_runbook.md). The short version is below.
 
-* **GPU 가속 상태 확인:**
-  - `glxinfo -B | grep -E 'renderer|Accelerated'`
+### 1. Configure SSH
+
+Edit `setup_rpi_ssh.sh` if the robot IP changed, then run:
+
+```bash
+./setup_rpi_ssh.sh
+ssh rpi5
+```
+
+The scripts use `ROBOT_SSH=rpi5` by default. You can override it:
+
+```bash
+ROBOT_SSH=ubuntu@172.21.105.146 ./robot_bringup.sh
+```
+
+### 2. Deploy Code to the Robot
+
+```bash
+./deploy_to_robot.sh
+```
+
+This syncs:
+
+- `udp_cmd_vel_bridge.py`
+- `src/`
+
+It intentionally does not sync `bags/`, `outputs/`, `build/`, `install/`, or other generated artifacts.
+
+### 3. Run the Robot
+
+Open four terminals on the PC.
+
+```bash
+# Terminal A: TurtleBot3 bringup, LDS-01, OpenCR, C920, C270
+./robot_bringup.sh
+
+# Terminal B: UDP joystick -> TwistStamped /cmd_vel bridge on the robot
+./robot_cmd_bridge.sh
+
+# Terminal C: local joystick reader + UDP sender
+./run_pc_joystick.sh
+
+# Terminal D: bag recording on the robot
+./robot_record.sh building_scan
+```
+
+Stop `robot_record.sh` with `Ctrl+C`. The script keeps `ros2 bag record` in the foreground so the bag closes cleanly.
+
+### 4. Fetch the Latest Bag
+
+```bash
+./fetch_turtlebot_bag.sh
+```
+
+The script reads `.last_bag` from the robot, downloads the bag into local `bags/`, and runs:
+
+```bash
+ros2 bag info bags/<bag_name>
+```
+
+### Real Bag Topic Set
+
+```text
+/scan
+/odom
+/tf
+/tf_static
+/joint_states
+/cmd_vel
+/imu
+/battery_state
+/sensor_state
+/magnetic_field
+/camera_c920/image_raw/compressed
+/camera_c920/camera_info
+/camera_c270/image_raw/compressed
+/camera_c270/camera_info
+```
 
 ---
 
-## 실물 도착 후 검증할 항목 (TODO)
+## Joystick Controls
 
-현재는 시뮬레이션 기반 구성이므로, 하드웨어 도착 후 아래 항목들에 대한 검증이 필요합니다:
-1. **Xbox 게임패드 연결 확인:**
-   - 컨트롤러가 인식되지 않으면 `/dev/input/js*` 확인 및 WSL 입력 장치 연결 상태 확인
-   - `jstest /dev/input/js0` 로 축/버튼 동작 확인
-   - `ros2 run joy joy_enumerate_devices` 로 ROS joy ID 확인
-   - `ros2 topic echo /joy` 로 매핑 검증 및 `xbox_teleop.yaml` 파라미터 수정 (Deadman/Turbo 버튼)
-2. **실제 로봇 주행 안전 테스트:**
-   - 실제 로봇에서 처음 테스트할 때는 바퀴를 띄운 상태 또는 넓은 공간에서 낮은 속도로 테스트
-3. **RGB-D 카메라 장착 및 TF 보정:**
-   - 실제 카메라를 TurtleBot3 상단 브라켓에 장착 후 `base_link` 기준 `x, y, z, roll, pitch, yaw` 측정
-   - 측정한 값을 xacro argument로 업데이트하여 시뮬레이션 및 실제 모델과 일치화
-   - USB 케이블이 라이다 시야나 회전부에 방해되지 않도록 정리
-4. **실제 카메라 드라이버 실행 (RealSense 등):**
-   - 실제 카메라의 ros2 드라이버 설치 및 실행
-5. **실제 Nav2 및 SLAM 성능 테스트:**
-   - 실제 환경에서 SLAM 성능 평가 및 Nav2 튜닝
+| Control | Mapping |
+|---|---|
+| Enable motion | Hold button `7` |
+| Turbo | Hold button `4` while enabled |
+| Forward / backward | Axis `1` |
+| Turn | Axis `3` |
+| Safety timeout | Stop command if UDP input is older than `0.25s` |
 
-## 실물 로봇 조이스틱 실행 절차
-
-전원 체크, 로봇 bringup, PC 조이스틱 UDP 브리지, 카메라 2개/센서 bag 기록 절차는 [docs/real_robot_joystick_runbook.md](docs/real_robot_joystick_runbook.md)에 정리되어 있습니다.
+The real robot bridge publishes `geometry_msgs/msg/TwistStamped` because TurtleBot3 Jazzy subscribes to `TwistStamped /cmd_vel`. Publishing plain `Twist` may look correct on the PC but will not move the robot.
 
 ---
 
-## 향후 계획 (TODO)
+## Verification Commands
 
-1. **자율주행 (Nav2) 전환:**
-   - 수동 SLAM으로 저장된 `maps/<map_name>.yaml`을 Nav2 map_server에 로드
-   - AMCL/Nav2 localization 구성
-   - `nav2_simple_commander` 등 waypoint 기반 자율 순찰 구현 (2차 작업: `hyper_turtle_navigation` 패키지 활성화)
-2. **그래피티 탐지 파이프라인 (Perception):**
-   - 저장된 rosbag을 재생(`ros2 bag play bags/<bag_name>`)하면서 `/camera/color/image_raw`, `/camera/depth/image_raw`, `/odom`, `/tf` 데이터를 활용
-   - 그래피티/스티커/오염 탐지 노드 개발 (`hyper_turtle_perception` 패키지)
-   - 탐지 결과를 Depth 정보 및 로봇 Pose(Map 기준 좌표)와 융합하여 지도에 마킹
+Basic ROS graph:
+
+```bash
+ros2 node list
+ros2 topic list
+ros2 topic list | grep camera
+```
+
+Topic health:
+
+```bash
+ros2 topic hz /scan
+ros2 topic hz /camera_c920/image_raw/compressed
+ros2 topic hz /camera_c270/image_raw/compressed
+ros2 topic echo /cmd_vel --once
+ros2 topic echo /odom --once
+```
+
+TF checks:
+
+```bash
+ros2 run tf2_tools view_frames
+ros2 run tf2_ros tf2_echo base_link camera_c920_optical_frame
+ros2 run tf2_ros tf2_echo base_link camera_c270_optical_frame
+```
+
+Camera checks on the robot:
+
+```bash
+v4l2-ctl --list-devices
+v4l2-ctl -d /dev/video0 --all
+v4l2-ctl -d /dev/video2 --all
+```
+
+Joystick checks on the PC:
+
+```bash
+ros2 run joy joy_enumerate_devices
+jstest /dev/input/js0
+ros2 topic echo /joy --once
+```
+
+---
+
+## Vision Data Contract
+
+The downstream vision/reconstruction pipeline should treat the bag as a timestamped sensor bundle:
+
+```text
+image timestamp t
+  -> camera optical frame pose from /tf and /tf_static
+  -> camera intrinsics from /camera_*/camera_info
+  -> robot pose from odom/base_link
+  -> 2D structure from /scan
+```
+
+For each camera frame:
+
+```text
+T_world_camera_optical(t)
+  = T_odom_base(t)
+  * T_base_camera_link
+  * T_camera_link_camera_optical
+```
+
+Implementation details, QoS notes, CameraInfo schema, LaserScan conventions, and timestamp interpolation guidance are in [docs/vision_data_handoff.md](docs/vision_data_handoff.md).
+
+---
+
+## Reconstruction Notes
+
+The original target was dense stereo point cloud reconstruction from C920/C270. In the final real bag, that path was limited by:
+
+- incomplete or missing camera calibration in some captures,
+- C270 TF/camera alignment instability,
+- scale ambiguity and noisy stereo matching from two consumer webcams,
+- wheel odometry drift during longer indoor runs.
+
+The strongest final result used a more robust hybrid approach:
+
+1. Use LiDAR and odometry to recover a usable 2D/3D spatial scaffold.
+2. Extract C920 image panels along the robot path.
+3. Project edge/texture surfaces into the LiDAR-derived structure.
+4. Package the result as an edge-textured 3D map viewer snapshot.
+
+| Earlier diagnostic | Improved edge-textured result |
+| :---: | :---: |
+| ![Height distribution diagnostic](<extracted_images/기존_output_높이_분포.png>) | ![Final edge textured result](<extracted_images/최종_Edge_textured_3D_map_desktop.jpeg>) |
+
+This is not a full photogrammetry mesh. It is a pragmatic robotics result: the robot pose, LiDAR geometry, and real camera texture are connected in one visual map.
+
+---
+
+## Repository Hygiene
+
+Generated and heavy data are ignored:
+
+```text
+build/
+install/
+log/
+bags/
+outputs/
+final_code/
+.venv/
+__pycache__/
+```
+
+Keep source, launch files, configs, documentation, and curated result media in Git. Keep full bags, generated point clouds, WebGL build outputs, and experimental archives local unless a release artifact strategy is added.
+
+---
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| Robot board is on but wheels do not move | Check battery/OpenCR motor power. USB power alone can keep sensors alive while motors remain unavailable. |
+| `/cmd_vel` is published but robot does not move | Confirm message type is `TwistStamped`; run `ros2 topic info /cmd_vel -v`. |
+| PC joystick does not reach robot | Use `robot_cmd_bridge.sh` + `run_pc_joystick.sh`; this avoids DDS discovery issues by sending joystick packets over UDP. |
+| `/camera_c920/...` or `/camera_c270/...` missing | Check `v4l2-ctl --list-devices`, device paths in `usb_cam_c*.yaml`, and USB bandwidth. |
+| Camera FPS drops or image is black | Lower resolution/FPS, use MJPEG/compressed transport, and check `v4l2-ctl -d /dev/video* --all`. |
+| Bag is corrupt after stopping | Stop `robot_record.sh` with `Ctrl+C`; avoid background `pkill`-style cleanup for `ros2 bag record`. |
+| RViz TF tree does not show camera frames | Rebuild, source `install/setup.bash`, and verify `base_link -> camera_*_optical_frame` with `tf2_echo`. |
+| SLAM map drifts | Slow down the robot, avoid sudden rotations, and keep the scan area short enough for wheel odom drift. |
+| `joy_node` opens the wrong controller | Use `ros2 run joy joy_enumerate_devices`; pass the ROS device ID as `./run_pc_joystick.sh <robot_ip> <joy_device_id>`. |
+
+---
+
+## Current Status and Next Work
+
+Completed:
+
+- Dual webcam simulation with matching C920/C270 topics.
+- Real TurtleBot3 bringup with LDS-01, OpenCR, C920, and C270.
+- UDP joystick bridge for reliable real robot control.
+- Clean real bag recording and fetch workflow.
+- Result snapshots for simulation, real run, LiDAR floorplan, and edge-textured 3D map.
+
+Next:
+
+- Calibrate C920/C270 intrinsics and commit stable camera YAMLs.
+- Refine camera extrinsics after a mechanical mount upgrade.
+- Add Nav2 localization mode using saved maps.
+- Convert the reconstruction scripts into a reproducible, tracked pipeline or release artifact.
+- Add perception nodes for graffiti/sticker/damage detection.
 
 ---

@@ -12,13 +12,13 @@
   <xacro:arg name="c920_pitch" default="0.0"/>
   <xacro:arg name="c920_yaw"   default="0.0"/>
 
-  <!-- C270 (secondary, angled to the left ~45°) -->
+  <!-- C270 (secondary, forward-facing) -->
   <xacro:arg name="c270_x"     default="0.060"/>
   <xacro:arg name="c270_y"     default="0.035"/>
   <xacro:arg name="c270_z"     default="0.135"/>
   <xacro:arg name="c270_roll"  default="0.0"/>
   <xacro:arg name="c270_pitch" default="0.0"/>
-  <xacro:arg name="c270_yaw"   default="0.7853981634"/> <!-- +pi/4 -->
+  <xacro:arg name="c270_yaw"   default="0.0"/>
 
   <xacro:mono_camera
       parent="base_link" name="camera_c920"

@@ -361,11 +361,11 @@
       <pose relative_to="base_link">0.075 0.0 0.135 0 0 0</pose>
     </joint>
 
-    <!-- C270 mount: front-left ~+45° yaw, ~LDS height -->
+    <!-- C270 mount: front-left, forward-facing, ~LDS height -->
     <joint name="camera_c270_joint" type="fixed">
       <parent>base_link</parent>
       <child>camera_c270_link</child>
-      <pose relative_to="base_link">0.060 0.035 0.135 0 0 0.7853981634</pose>
+      <pose relative_to="base_link">0.060 0.035 0.135 0 0 0</pose>
     </joint>
 
     <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">

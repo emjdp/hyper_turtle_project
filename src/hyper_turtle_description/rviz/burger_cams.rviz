@@ -229,13 +229,13 @@ Visualization Manager:
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 900
+  Height: 750
   Hide Left Dock: false
   Hide Right Dock: false
   Image_C920:
     collapsed: false
   Image_C270:
     collapsed: false
-  Width: 1600
-  X: 100
-  Y: 64
+  Width: 754
+  X: 1136
+  Y: 400

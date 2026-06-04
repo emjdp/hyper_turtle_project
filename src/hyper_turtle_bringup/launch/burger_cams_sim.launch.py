@@ -31,7 +31,7 @@ def generate_launch_description():
     c270_z = LaunchConfiguration('c270_z', default='0.135')
     c270_roll = LaunchConfiguration('c270_roll', default='0.0')
     c270_pitch = LaunchConfiguration('c270_pitch', default='0.0')
-    c270_yaw = LaunchConfiguration('c270_yaw', default='0.7853981634')
+    c270_yaw = LaunchConfiguration('c270_yaw', default='0.0')
 
     pkg_hyper_turtle_description = get_package_share_directory('hyper_turtle_description')
     pkg_hyper_turtle_bringup = get_package_share_directory('hyper_turtle_bringup')
@@ -177,7 +177,7 @@ def generate_launch_description():
         DeclareLaunchArgument('c270_z', default_value='0.135'),
         DeclareLaunchArgument('c270_roll', default_value='0.0'),
         DeclareLaunchArgument('c270_pitch', default_value='0.0'),
-        DeclareLaunchArgument('c270_yaw', default_value='0.7853981634'),
+        DeclareLaunchArgument('c270_yaw', default_value='0.0'),
         gazebo_server,
         gazebo_client,
         robot_state_publisher,
