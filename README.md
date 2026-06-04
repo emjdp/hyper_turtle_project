@@ -49,7 +49,7 @@ Heavy artifacts such as `bags/`, `outputs/`, `build/`, `install/`, and `final_co
 | `src/hyper_turtle_control` | Xbox/joystick teleoperation config |
 | `src/hyper_turtle_mapping` | SLAM Toolbox launch and map saving workflow |
 | `src/hyper_turtle_navigation` | Nav2 follow-up notes and future navigation work |
-| `src/hyper_turtle_perception` | Perception placeholder for future graffiti/damage detection |
+| `src/hyper_turtle_perception` | Placeholder package for future camera-based scene understanding and reconstruction support |
 | `scripts/robot` | Real robot deploy, SSH setup, bringup, joystick bridge, recording, bag fetch scripts |
 | `scripts/pc` | PC/WSL joystick helper scripts |
 | `docs/real_robot_joystick_runbook.md` | Real robot power, SSH, bringup, UDP joystick, bag record/fetch runbook |
@@ -603,6 +603,6 @@ Next:
 - Refine camera extrinsics after a mechanical mount upgrade.
 - Add Nav2 localization mode using saved maps.
 - Convert the reconstruction scripts into a reproducible, tracked pipeline or release artifact.
-- Add perception nodes for graffiti/sticker/damage detection.
+- Add camera-based scene understanding nodes for visual reconstruction support.
 
 ---
