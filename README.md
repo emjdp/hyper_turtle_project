@@ -60,6 +60,21 @@ Heavy artifacts such as `bags/`, `outputs/`, `build/`, `install/`, and `final_co
 
 ---
 
+## Team and Contributions
+
+GitHub's contributor graph is useful for commit history, but this project also records team responsibilities here because some implementation work and handoff artifacts were developed outside this repository.
+
+| Member | GitHub | Role |
+|---|---|---|
+| emjdp | [@emjdp](https://github.com/emjdp) | ROS 2 package integration, TurtleBot3 simulation/real-robot workflow, runbooks, repository curation |
+| GangsanStorage | [@GangsanStorage](https://github.com/GangsanStorage) | Project collaborator |
+| Hojun Choi | [@Hoguwart777](https://github.com/Hoguwart777) | Vision post-processing and reconstruction implementation |
+| 이성빈 | [@zcrawling](https://github.com/zcrawling) | Project collaborator |
+
+The final vision post-processing code path was implemented by Hojun Choi in [`Hoguwart777/hyper_turtle_project/final_code`](https://github.com/Hoguwart777/hyper_turtle_project/tree/main/final_code), covering the reconstruction pipeline, rosbag I/O, stereo depth workflow, validation utilities, and CPU/GPU implementation branches.
+
+---
+
 ## Features
 
 **Robot and sensing**
