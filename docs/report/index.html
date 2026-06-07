@@ -1,0 +1,1416 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hyper Turtle Project — 거북이 달리자</title>
+
+    <style>
+      /* ╔══════════════════════════════════════════════════════════════════╗
+         ║  SELF-HOSTED FONTS — no external/network dependency               ║
+         ║  Latin: Playfair Display 400 (roman+italic), Jost 300,           ║
+         ║  JetBrains Mono 300.  Korean: Noto Serif KR / Noto Sans KR.      ║
+         ╚══════════════════════════════════════════════════════════════════╝ */
+      @font-face {
+        font-family: "Playfair Display";
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url("./assets/fonts/playfair-400.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Playfair Display";
+        font-style: italic;
+        font-weight: 400;
+        font-display: swap;
+        src: url("./assets/fonts/playfair-400-italic.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Jost";
+        font-style: normal;
+        font-weight: 300;
+        font-display: swap;
+        src: url("./assets/fonts/jost-300.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "JetBrains Mono";
+        font-style: normal;
+        font-weight: 300;
+        font-display: swap;
+        src: url("./assets/fonts/jetbrains-mono-300.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Noto Serif KR";
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url("./assets/fonts/noto-serif-kr-400.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Noto Sans KR";
+        font-style: normal;
+        font-weight: 300;
+        font-display: swap;
+        src: url("./assets/fonts/noto-sans-kr-300.woff2") format("woff2");
+      }
+
+      /* ╔══════════════════════════════════════════════════════════════════╗
+         ║  FIXED 16:9 STAGE — mandatory base (frontend-slides)             ║
+         ║  Slides authored at 1920×1080 and scaled as a whole.            ║
+         ╚══════════════════════════════════════════════════════════════════╝ */
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: var(--stage-bg, #0f1810);
+      }
+      .deck-viewport {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        background: var(--stage-bg, #0f1810);
+      }
+      .deck-stage {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        transform-origin: 0 0;
+        background: var(--c-bg);
+      }
+      img,
+      video,
+      canvas,
+      svg {
+        max-width: 100%;
+        max-height: 100%;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.2s !important;
+        }
+      }
+
+      /* Still mode (?still=1): force final visual state — for static capture/print */
+      body.still [data-anim] {
+        opacity: 1 !important;
+        animation: none !important;
+        clip-path: none !important;
+        transform: none !important;
+      }
+      body.still .slide.active { transition: none !important; }
+
+      /* ╔══════════════════════════════════════════════════════════════════╗
+         ║  ZONE A · GROVE TOKENS                                            ║
+         ╚══════════════════════════════════════════════════════════════════╝ */
+      :root {
+        /* Palette — deep forest / parchment / terracotta coral */
+        --c-bg: #192b1b;
+        --c-bg-alt: #1e3221;
+        --c-bg-light: #e8e4d6;
+        --c-bg-light-alt: #dedad0;
+        --c-fg: #d4cfbf;
+        --c-fg-2: rgba(212, 207, 191, 0.6);
+        --c-fg-3: rgba(212, 207, 191, 0.32);
+        --c-fg-light: #192b1b;
+        --c-fg-light-2: rgba(25, 43, 27, 0.58);
+        --c-fg-light-3: rgba(25, 43, 27, 0.33);
+        --c-accent: #c8524a;
+        --c-border: rgba(212, 207, 191, 0.12);
+        --c-border-light: rgba(25, 43, 27, 0.14);
+
+        /* Font stacks — Latin serif leads, Korean falls through */
+        --f-display: "Playfair Display", "Noto Serif KR", Georgia, serif;
+        --f-heading: "Playfair Display", "Noto Serif KR", Georgia, serif;
+        --f-body: "Jost", "Noto Sans KR", system-ui, sans-serif;
+        --f-mono: "JetBrains Mono", "Noto Sans KR", monospace;
+
+        --sz-display: 150px; /* 10vw */
+        --sz-h1: 96px; /* 5.5vw, capped */
+        --sz-h2: 60px; /* 3.2vw */
+        --sz-h3: 38px; /* 2vw */
+        --sz-lead: 30px; /* 1.45vw */
+        --sz-body: 25px; /* list-emph legibility floor */
+        --sz-caption: 18px;
+        --sz-label: 16px;
+
+        /* Spacing */
+        --pad-x: 150px;
+        --pad-y: 72px;
+        --gap-lg: 50px;
+        --gap-md: 30px;
+        --gap-sm: 15px;
+
+        /* Motion */
+        --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+        --dur-enter: 0.7s;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      /* ╔══════════════════════════════════════════════════════════════════╗
+         ║  ZONE B · SLIDE ENGINE                                            ║
+         ╚══════════════════════════════════════════════════════════════════╝ */
+      .slide {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        padding: var(--pad-y) var(--pad-x);
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        overflow: hidden;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.6s var(--ease-enter);
+        -webkit-font-smoothing: antialiased;
+        /* Korean line-breaking: break at word boundaries, never mid-syllable */
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+      }
+      .slide.active {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+        z-index: 1;
+      }
+      .slide.dark {
+        background: var(--c-bg);
+        color: var(--c-fg);
+      }
+      .slide.light {
+        background: var(--c-bg-light);
+        color: var(--c-fg-light);
+      }
+      .slide-body {
+        min-height: 0;
+      }
+
+      /* ── Entrance animation system ─────────────────────────────────────── */
+      [data-anim] {
+        opacity: 0;
+      }
+      .slide.active [data-anim] {
+        animation-duration: var(--dur-enter);
+        animation-timing-function: var(--ease-enter);
+        animation-fill-mode: forwards;
+      }
+      .slide.active [data-anim="fade-up"] {
+        animation-name: kFadeUp;
+      }
+      .slide.active [data-anim="fade-in"] {
+        animation-name: kFadeIn;
+      }
+      .slide.active [data-anim="reveal-right"] {
+        animation-name: kRevealRight;
+      }
+      .slide.active [data-anim="scale-in"] {
+        animation-name: kScaleIn;
+      }
+      [data-delay="0"] { animation-delay: 0s; }
+      [data-delay="1"] { animation-delay: 0.08s; }
+      [data-delay="2"] { animation-delay: 0.18s; }
+      [data-delay="3"] { animation-delay: 0.3s; }
+      [data-delay="4"] { animation-delay: 0.44s; }
+      [data-delay="5"] { animation-delay: 0.6s; }
+      [data-delay="6"] { animation-delay: 0.78s; }
+
+      @keyframes kFadeUp {
+        from { opacity: 0; transform: translateY(28px); }
+        to { opacity: 1; transform: none; }
+      }
+      @keyframes kFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes kRevealRight {
+        from { clip-path: inset(0 100% 0 0); opacity: 1; }
+        to { clip-path: inset(0 0 0 0); opacity: 1; }
+      }
+      @keyframes kScaleIn {
+        from { opacity: 0; transform: scale(0.94); }
+        to { opacity: 1; transform: none; }
+      }
+
+      /* ── Nav dots ──────────────────────────────────────────────────────── */
+      #nav-dots {
+        position: fixed;
+        bottom: 18px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 7px;
+        z-index: 100;
+      }
+      .nav-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(212, 207, 191, 0.25);
+        cursor: pointer;
+        transition: background 0.3s, transform 0.3s;
+        padding: 0;
+      }
+      .nav-dot.is-active {
+        background: var(--c-accent);
+        transform: scale(1.4);
+      }
+      #key-hint {
+        position: fixed;
+        right: 20px;
+        bottom: 16px;
+        z-index: 100;
+        font-family: var(--f-mono);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        color: rgba(212, 207, 191, 0.4);
+        text-transform: uppercase;
+      }
+
+      /* ╔══════════════════════════════════════════════════════════════════╗
+         ║  ZONE C · TYPOGRAPHY                                              ║
+         ╚══════════════════════════════════════════════════════════════════╝ */
+      .display {
+        font-family: var(--f-display);
+        font-size: var(--sz-display);
+        font-weight: 400;
+        line-height: 1;
+        letter-spacing: -0.01em;
+      }
+      .h1 {
+        font-family: var(--f-heading);
+        font-size: var(--sz-h1);
+        font-weight: 400;
+        line-height: 1.12;
+      }
+      .h2 {
+        font-family: var(--f-heading);
+        font-size: var(--sz-h2);
+        font-weight: 400;
+        line-height: 1.2;
+      }
+      .h3 {
+        font-family: var(--f-heading);
+        font-size: var(--sz-h3);
+        font-weight: 400;
+        line-height: 1.3;
+      }
+      /* Grove signature: italic coral emphasis inside any serif headline */
+      .display em,
+      .h1 em,
+      .h2 em,
+      .h3 em,
+      .quote-text em {
+        font-style: italic;
+        color: var(--c-accent);
+      }
+      .lead {
+        font-family: var(--f-body);
+        font-size: var(--sz-lead);
+        font-weight: 300;
+        line-height: 1.65;
+      }
+      .body {
+        font-family: var(--f-body);
+        font-size: var(--sz-body);
+        font-weight: 300;
+        line-height: 1.7;
+      }
+      .caption {
+        font-family: var(--f-body);
+        font-size: var(--sz-caption);
+        font-weight: 300;
+        line-height: 1.55;
+      }
+      .label {
+        font-family: var(--f-mono);
+        font-size: var(--sz-label);
+        font-weight: 300;
+        letter-spacing: 0.12em;
+      }
+      .muted { color: var(--c-fg-2); }
+      .accent { color: var(--c-accent); }
+      .light .muted { color: var(--c-fg-light-2); }
+
+      /* Em-dash bullet list — the Grove bullet language */
+      .bullet-list {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap-md);
+        font-family: var(--f-body);
+        font-size: var(--sz-body);
+        font-weight: 300;
+        line-height: 1.55;
+      }
+      .bullet-list li {
+        display: grid;
+        grid-template-columns: 1.6em 1fr;
+        gap: 0.5em;
+      }
+      .bullet-list li::before {
+        content: "—";
+        color: var(--c-accent);
+        font-family: var(--f-mono);
+      }
+      .bullet-list b {
+        font-weight: 300;
+        color: var(--c-accent);
+      }
+
+      /* ╔══════════════════════════════════════════════════════════════════╗
+         ║  ZONE D · CHROME                                                  ║
+         ╚══════════════════════════════════════════════════════════════════╝ */
+      .slide-chrome,
+      .slide-foot {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .slide-chrome {
+        padding-bottom: var(--gap-sm);
+        border-bottom: 1px solid var(--c-border);
+        margin-bottom: var(--gap-md);
+      }
+      .slide-foot {
+        padding-top: var(--gap-sm);
+        border-top: 1px solid var(--c-border);
+        margin-top: var(--gap-md);
+      }
+      .light .slide-chrome,
+      .light .slide-foot {
+        border-color: var(--c-border-light);
+      }
+      .slide--cover .slide-chrome,
+      .slide--cover .slide-foot,
+      .slide--statement .slide-chrome,
+      .slide--statement .slide-foot,
+      .slide--end .slide-chrome,
+      .slide--end .slide-foot {
+        display: none;
+      }
+
+      /* ╔══════════════════════════════════════════════════════════════════╗
+         ║  ZONE E · GROVE COMPONENTS                                        ║
+         ╚══════════════════════════════════════════════════════════════════╝ */
+      .grove-num {
+        font-family: var(--f-display);
+        font-size: 330px;
+        font-weight: 400;
+        line-height: 1;
+        color: rgba(212, 207, 191, 0.06);
+        position: absolute;
+        right: var(--pad-x);
+        bottom: -0.18em;
+        pointer-events: none;
+        user-select: none;
+        letter-spacing: -0.03em;
+      }
+      .light .grove-num { color: rgba(25, 43, 27, 0.06); }
+
+      .kicker {
+        font-family: var(--f-mono);
+        font-size: var(--sz-label);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--c-accent);
+      }
+      .chapter-num {
+        font-family: var(--f-mono);
+        font-size: var(--sz-label);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--c-accent);
+        margin-bottom: var(--gap-md);
+      }
+      .rule {
+        width: 44px;
+        height: 1px;
+        background: var(--c-accent);
+      }
+      .rule.full {
+        width: 100%;
+        background: var(--c-border);
+      }
+      .light .rule.full { background: var(--c-border-light); }
+
+      .grove-stat {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap-sm);
+        padding-bottom: var(--gap-md);
+        border-bottom: 1px solid var(--c-border);
+      }
+      .grove-stat-val {
+        font-family: var(--f-display);
+        font-size: 70px;
+        font-weight: 400;
+        line-height: 1;
+        color: var(--c-accent);
+        letter-spacing: -0.02em;
+      }
+      .grove-stat-label {
+        font-family: var(--f-mono);
+        font-size: var(--sz-label);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--c-fg-2);
+      }
+      .light .grove-stat { border-color: var(--c-border-light); }
+      .light .grove-stat-label { color: var(--c-fg-light-2); }
+
+      /* ── Image / figure system ─────────────────────────────────────────── */
+      .figure {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap-sm);
+        min-height: 0;
+        height: 100%;
+      }
+      .frame {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+        border: 1px solid var(--c-border);
+        overflow: hidden;
+        background: var(--c-bg-alt);
+      }
+      .light .frame {
+        border-color: var(--c-border-light);
+        background: var(--c-bg-light-alt);
+      }
+      .frame img {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      .frame.fit img { object-fit: cover; }
+      .frame.fit img.anchor-right { object-position: right center; }
+      .frame.contain img { object-fit: contain; }
+      /* Casual photos: desaturate + forest-green color-blend overlay to unify */
+      .img-photo img { filter: saturate(0.8) contrast(1.03) brightness(0.96); }
+      .img-photo::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: var(--c-bg);
+        mix-blend-mode: color;
+        opacity: 0.16;
+        pointer-events: none;
+      }
+      /* Data / academic images: keep legible, frame only */
+      .img-data img { filter: saturate(0.96); }
+      .fig-cap {
+        font-family: var(--f-mono);
+        font-size: var(--sz-label);
+        letter-spacing: 0.08em;
+        color: var(--c-fg-2);
+        flex-shrink: 0;
+      }
+      .light .fig-cap { color: var(--c-fg-light-2); }
+
+      /* ── Layout utilities ──────────────────────────────────────────────── */
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap-md);
+        min-height: 0;
+      }
+      .stack.center { justify-content: center; height: 100%; }
+      .cols {
+        display: grid;
+        gap: 70px;
+        height: 100%;
+        align-items: center;
+        min-height: 0;
+      }
+      .cols.c-1-1 { grid-template-columns: 1fr 1fr; }
+      .cols.c-5-4 { grid-template-columns: 5fr 4fr; }
+      .cols.c-4-5 { grid-template-columns: 4fr 5fr; }
+      .cols.c-1-1.top,
+      .cols.c-5-4.top,
+      .cols.c-4-5.top { align-items: stretch; }
+      .imgs-rows {
+        display: grid;
+        grid-template-rows: 1fr 1fr;
+        gap: var(--gap-md);
+        height: 100%;
+        min-height: 0;
+      }
+
+      /* Compare two panels with a vertical hairline */
+      .compare {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        height: 100%;
+        align-items: stretch;
+      }
+      .compare-panel {
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap-md);
+        padding: 4px 0;
+      }
+      .compare-panel.left {
+        padding-right: 80px;
+        border-right: 1px solid var(--c-border);
+      }
+      .compare-panel.right { padding-left: 80px; }
+      .light .compare-panel.left { border-color: var(--c-border-light); }
+      .compare-label {
+        font-family: var(--f-mono);
+        font-size: var(--sz-label);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        padding-bottom: var(--gap-sm);
+        border-bottom: 1px solid var(--c-border);
+        color: var(--c-fg-2);
+      }
+      .compare-label.after { color: var(--c-accent); }
+      .light .compare-label { border-color: var(--c-border-light); color: var(--c-fg-light-2); }
+
+      /* Numbered process steps (vision pipeline) */
+      .steps {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--gap-md) 90px;
+        align-content: center;
+        height: 100%;
+      }
+      .step {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 22px;
+        align-items: baseline;
+        padding-bottom: var(--gap-sm);
+        border-bottom: 1px solid var(--c-border-light);
+      }
+      .step-num {
+        font-family: var(--f-display);
+        font-size: 40px;
+        line-height: 1;
+        color: var(--c-accent);
+      }
+      .step-text {
+        font-family: var(--f-body);
+        font-weight: 300;
+        font-size: 24px;
+        line-height: 1.4;
+      }
+
+      /* Cause cards (diagnosis) */
+      .cause {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding-bottom: var(--gap-md);
+        border-bottom: 1px solid var(--c-border-light);
+      }
+      .cause-head {
+        font-family: var(--f-mono);
+        font-size: var(--sz-label);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--c-accent);
+      }
+      .cause-body {
+        font-family: var(--f-body);
+        font-weight: 300;
+        font-size: 24px;
+        line-height: 1.5;
+      }
+
+      /* Headline block helper */
+      .head-block { display: flex; flex-direction: column; gap: var(--gap-sm); }
+      .head-block .rule { margin: 6px 0; }
+
+      /* Cover layout */
+      .slide--cover { padding: 0; grid-template-rows: none; }
+      .cover-grid {
+        display: grid;
+        grid-template-columns: 1fr 0.82fr;
+        height: 100%;
+      }
+      .cover-text {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: var(--pad-y) 90px var(--pad-y) var(--pad-x);
+      }
+      .cover-photo {
+        position: relative;
+        border-left: 1px solid var(--c-border);
+        overflow: hidden;
+        background: var(--c-bg-alt);
+      }
+      .cover-photo-bg {
+        position: absolute;
+        inset: -24px;
+        width: calc(100% + 48px);
+        height: calc(100% + 48px);
+        object-fit: cover;
+        filter: grayscale(0.78) saturate(0.5) contrast(1.08) brightness(0.38) sepia(0.18) blur(16px);
+        transform: scale(1.04);
+      }
+      .cover-photo .cover-subject {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: center 54%;
+        transform: scale(1.12);
+        filter: grayscale(0.72) saturate(0.58) contrast(1.13) brightness(0.72) sepia(0.16);
+      }
+      .cover-photo::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        background:
+          radial-gradient(ellipse at 55% 45%, transparent 0%, rgba(25, 43, 27, 0.12) 48%, rgba(25, 43, 27, 0.68) 100%);
+        pointer-events: none;
+      }
+      .cover-photo::after {
+        content: "";
+        position: absolute;
+        inset: -1px;
+        z-index: 3;
+        background:
+          linear-gradient(90deg, rgba(25, 43, 27, 0.62) 0%, rgba(25, 43, 27, 0.12) 38%, rgba(25, 43, 27, 0.2) 100%),
+          rgba(224, 118, 92, 0.12);
+        mix-blend-mode: multiply;
+        pointer-events: none;
+      }
+
+      /* Statement layout */
+      .slide--statement { display: flex; flex-direction: column; justify-content: center; }
+      .slide--statement .h1 {
+        font-size: 78px;
+        line-height: 1.2;
+        max-width: 1500px;
+      }
+
+      /* End layout */
+      .slide--end {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-start;
+        gap: var(--gap-md);
+      }
+    </style>
+  </head>
+
+  <body>
+    <nav id="nav-dots"></nav>
+    <div id="key-hint">← / → 이동</div>
+
+    <div class="deck-viewport">
+      <div class="deck-stage" id="stage">
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 01 · COVER
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide dark slide--cover">
+          <div class="cover-grid">
+            <div class="cover-text">
+              <div class="label muted" data-anim="fade-in" data-delay="0">
+                HYPER TURTLE PROJECT · 1조
+              </div>
+              <div>
+                <div class="kicker" data-anim="fade-in" data-delay="1">
+                  INDOOR 3D MAPPING · ROS 2 JAZZY
+                </div>
+                <div class="rule" data-anim="reveal-right" data-delay="2" style="margin: 22px 0"></div>
+                <h1 class="display" data-anim="fade-up" data-delay="2">거북이 <em>달리자</em></h1>
+                <p class="lead muted" data-anim="fade-up" data-delay="3" style="margin-top: 26px; max-width: 760px">
+                  C270 &amp; C920 스테레오 카메라와 LiDAR 기반<br />전정대 실내 3D 지도 작성
+                </p>
+              </div>
+              <div data-anim="fade-in" data-delay="4">
+                <div class="label" style="margin-bottom: 10px">김강산 · 이성빈 · 최호준 · 박성호</div>
+                <div class="label muted">ROS 2 Jazzy · Ubuntu 24.04 · WebGL 3D Mapping</div>
+              </div>
+            </div>
+            <div class="cover-photo" data-anim="fade-in" data-delay="2">
+              <img class="cover-photo-bg" src="../../extracted_images/turtle-20260520-20.jpg" alt="" aria-hidden="true" />
+              <img class="cover-subject" src="../../extracted_images/turtle-20260520-20.jpg" alt="듀얼 웹캠과 LDS-01을 장착한 TurtleBot3 Burger" />
+            </div>
+          </div>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 02 · MISSION (statement)
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide light slide--statement">
+          <div class="slide-chrome"></div>
+          <div class="slide-body" style="display: flex; flex-direction: column; justify-content: center; gap: var(--gap-md)">
+            <div class="chapter-num" data-anim="fade-in" data-delay="0">MISSION</div>
+            <div class="rule" data-anim="reveal-right" data-delay="1" style="margin-bottom: 12px"></div>
+            <h1 class="h1" data-anim="fade-up" data-delay="2">
+              TurtleBot3 및 듀얼 웹캠 기반 <em>데이터 수집 로봇 구축</em>과<br />
+              수집 데이터를 활용한 <em>실내 공간 3D 재구성</em>
+            </h1>
+            <p class="lead muted" data-anim="fade-up" data-delay="3" style="max-width: 1400px; margin-top: 16px">
+              실내(전정대) 주행 데이터 수집 및 LiDAR·Odometry·카메라 bag 데이터 후처리를 통한 3D 시각화 지도 구현을 초기 목표로 설정
+            </p>
+          </div>
+          <div class="slide-foot"></div>
+          <div class="grove-num">01</div>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 03 · SYSTEM
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide dark">
+          <header class="slide-chrome">
+            <span class="label accent">01 // SYSTEM</span>
+            <span class="label muted">HYPER TURTLE</span>
+          </header>
+          <div class="slide-body">
+            <div class="cols c-4-5">
+              <div class="stack">
+                <div class="head-block">
+                  <span class="kicker" data-anim="fade-in" data-delay="0">SENSOR STACK</span>
+                  <div class="rule" data-anim="reveal-right" data-delay="1"></div>
+                  <h2 class="h2" data-anim="fade-up" data-delay="1">TurtleBot3 위에 올린<br /><em>이종 센서 스택</em></h2>
+                </div>
+                <ul class="bullet-list" data-anim="fade-up" data-delay="2">
+                  <li><span><b>모바일 베이스</b> — TurtleBot3 Burger + OpenCR, 휠 odometry · IMU (<span class="label">/odom /tf /joint_states</span>)</span></li>
+                  <li><span><b>구조 센서</b> — LDS-01 2D LiDAR (<span class="label">/scan</span>)</span></li>
+                  <li><span><b>이종 스테레오</b> — Logitech C920(primary) + C270(secondary), REP-103 optical frame</span></li>
+                  <li><span><b>소프트웨어</b> — ROS 2 Jazzy · Ubuntu 24.04, 시뮬레이션과 실물 토픽/프레임 이름 일치</span></li>
+                </ul>
+              </div>
+              <figure class="figure" data-anim="scale-in" data-delay="3">
+                <div class="frame fit img-photo">
+                  <img src="../images/readme_sim_three_windows.gif" alt="Gazebo, RViz, 듀얼 카메라 스트림이 함께 도는 시뮬레이션 삼중 창" class="anchor-right" />
+                </div>
+                <figcaption class="fig-cap">▲ Gazebo · RViz · 듀얼캠 동시 실행 — 시뮬레이션</figcaption>
+              </figure>
+            </div>
+          </div>
+          <footer class="slide-foot">
+            <span class="label muted">SYSTEM</span>
+            <span class="label muted count"></span>
+          </footer>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 04 · TEAM
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide dark">
+          <header class="slide-chrome">
+            <span class="label accent">02 // TEAM</span>
+            <span class="label muted">HYPER TURTLE</span>
+          </header>
+          <div class="slide-body stack">
+            <div class="head-block">
+              <span class="kicker" data-anim="fade-in" data-delay="0">ROLES · 첫 미팅 05/10</span>
+              <div class="rule" data-anim="reveal-right" data-delay="1"></div>
+              <h2 class="h2" data-anim="fade-up" data-delay="1">두 개 분과 구성을 통한 <em>병렬 개발 진행</em></h2>
+            </div>
+            <div class="compare" style="flex: 1; min-height: 0" data-anim="fade-up" data-delay="2">
+              <div class="compare-panel left">
+                <div class="compare-label">로봇팀 · ROBOT TEAM</div>
+                <div class="body muted" style="font-size: 25px">박성호 · 김강산 · 이성빈</div>
+                <ul class="bullet-list" style="font-size: 25px; gap: var(--gap-sm)">
+                  <li><span>TurtleBot3 하드웨어 구축 및 ROS 2 이식</span></li>
+                  <li><span>Gazebo 및 RViz 기반 가상 시뮬레이션 환경 구현</span></li>
+                  <li><span>Xbox 컨트롤러 활용 무선 원격 제어 구축</span></li>
+                  <li><span>자동 부팅 및 원격 통신 환경 구축 (systemd, SSH)</span></li>
+                </ul>
+              </div>
+              <div class="compare-panel right">
+                <div class="compare-label after">비전팀 · VISION TEAM</div>
+                <div class="body muted" style="font-size: 25px">최호준 · 이성빈</div>
+                <ul class="bullet-list" style="font-size: 25px; gap: var(--gap-sm)">
+                  <li><span>듀얼 카메라 이미지 취득 및 스테레오 캘리브레이션</span></li>
+                  <li><span>3D 포인트 클라우드 매핑 및 시각화 연구</span></li>
+                  <li><span>WebGL 기반 3D 웹 뷰어 개발</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <footer class="slide-foot">
+            <span class="label muted">TEAM</span>
+            <span class="label muted count"></span>
+          </footer>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 05 · CONSTRAINT
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide dark">
+          <header class="slide-chrome">
+            <span class="label accent">03 // CHALLENGE</span>
+            <span class="label muted">HYPER TURTLE</span>
+          </header>
+          <div class="slide-body">
+            <div class="cols c-5-4 top">
+              <div class="stack center">
+                <div class="head-block">
+                  <span class="kicker" data-anim="fade-in" data-delay="0">UNEXPECTED CRISIS &amp; ADAPTATION</span>
+                  <div class="rule" data-anim="reveal-right" data-delay="1"></div>
+                  <h2 class="h2" data-anim="fade-up" data-delay="1">센서 수급 제약에 따른<br /><em>스테레오 카메라 자체 제작</em></h2>
+                </div>
+                <ul class="bullet-list" data-anim="fade-up" data-delay="2">
+                  <li><span><b>RGB-D 대여 불가</b> — 초기 계획 핵심 센서였던 RGB-D 카메라 대여 불가에 따른 구성 변경</span></li>
+                  <li><span><b>저가형 스테레오 제작</b> — 기본 지급 C270(HD) 및 개인 C920(FHD) 웹캠을 하드웨어 프레임 개조로 결합</span></li>
+                  <li><span><b>플랫폼 업그레이드</b> — 연산 병목 현상을 해결하기 위해 Raspberry Pi 3에서 Pi 4로 교체</span></li>
+                  <li><span><b>통신 환경 최적화</b> — ROS 2 Jazzy 및 Ubuntu 24.04 직접 빌드, systemd 기반 통신 환경(IP 브로드캐스트, SSH) 자동 활성화</span></li>
+                </ul>
+              </div>
+              <figure class="figure" data-anim="scale-in" data-delay="3">
+                <div class="frame fit img-photo">
+                  <img src="../images/readme_robot_dual_webcam_mount.jpg" alt="C270과 C920 웹캠을 프레임 개조로 결합한 마운트와 Raspberry Pi" />
+                </div>
+                <figcaption class="fig-cap">▲ C270 / C920 프레임 개조 마운트</figcaption>
+              </figure>
+            </div>
+          </div>
+          <footer class="slide-foot">
+            <span class="label muted">CHALLENGE</span>
+            <span class="label muted count"></span>
+          </footer>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 06 · SIMULATION
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide dark">
+          <header class="slide-chrome">
+            <span class="label accent">04 // ROBOT TEAM</span>
+            <span class="label muted">SIMULATION</span>
+          </header>
+          <div class="slide-body">
+            <div class="cols c-4-5 top">
+              <div class="stack center">
+                <div class="head-block">
+                  <span class="kicker" data-anim="fade-in" data-delay="0">SIMULATION DUAL-CAMERA STACK</span>
+                  <div class="rule" data-anim="reveal-right" data-delay="1"></div>
+                  <h2 class="h2" data-anim="fade-up" data-delay="1">실측 데이터 수집에 앞선 <em>시뮬레이션 기반 사전 검증</em></h2>
+                </div>
+                <ul class="bullet-list" data-anim="fade-up" data-delay="2" style="gap: var(--gap-sm)">
+                  <li><span>Gazebo 시뮬레이터 상에 가상 카메라 구현 및 URDF/SDF 기반 카메라 링크·좌표계 정의</span></li>
+                  <li><span>ROS-Gazebo 브릿지 노드를 활용하여 가상 이미지 및 카메라 정보 토픽 변환</span></li>
+                  <li><span>RViz2 상에서 로봇 모델, LiDAR 측정 정보, TF 트리 및 스테레오 카메라 데이터 연동 검증</span></li>
+                  <li><span>실물 데이터와의 일관성 확보를 통한 시뮬레이션 기반 데이터 검증 프로토콜 구축</span></li>
+                </ul>
+              </div>
+              <div style="display: grid; grid-template-rows: 1.4fr 1fr; gap: var(--gap-sm); height: 100%; min-height: 0" data-anim="scale-in" data-delay="3">
+                <figure class="figure">
+                  <div class="frame fit img-photo">
+                    <img src="../images/readme_sim_three_windows.gif" alt="Gazebo, RViz, 듀얼 카메라 스트림이 함께 도는 시뮬레이션" />
+                  </div>
+                  <figcaption class="fig-cap">▲ Gazebo + RViz + dual camera 동시 구동</figcaption>
+                </figure>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-sm); min-height: 0">
+                  <figure class="figure">
+                    <div class="frame contain img-data"><img src="../images/gazebo_turtlebot_cams.png" alt="Gazebo Sim의 실내 스캔 테스트 월드" /></div>
+                    <figcaption class="fig-cap">▲ Gazebo world</figcaption>
+                  </figure>
+                  <figure class="figure">
+                    <div class="frame contain img-data"><img src="../images/rviz_turtlebot_cams.png" alt="RViz2의 TF, LaserScan, 로봇 모델, 듀얼 카메라 패널" /></div>
+                    <figcaption class="fig-cap">▲ RViz2 sensor check</figcaption>
+                  </figure>
+                </div>
+              </div>
+            </div>
+          </div>
+          <footer class="slide-foot">
+            <span class="label muted">ACQUISITION · SIM</span>
+            <span class="label muted count"></span>
+          </footer>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 07 · ACQUISITION · REAL ROBOT
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide dark">
+          <header class="slide-chrome">
+            <span class="label accent">04 // ROBOT TEAM</span>
+            <span class="label muted">REAL ROBOT</span>
+          </header>
+          <div class="slide-body">
+            <div class="cols c-4-5 top">
+              <div class="stack center">
+                <div class="head-block">
+                  <span class="kicker" data-anim="fade-in" data-delay="0">ROBOT-SIDE ROS 2 PIPELINE</span>
+                  <div class="rule" data-anim="reveal-right" data-delay="1"></div>
+                  <h2 class="h2" data-anim="fade-up" data-delay="1">실물 로봇 <em>데이터 수집</em> 파이프라인</h2>
+                </div>
+                <ul class="bullet-list" data-anim="fade-up" data-delay="2">
+                  <li><span><b>센서 구성</b> — turtlebot3_node · usb_cam · TF/camera frame 연결</span></li>
+                  <li><span><b>원격 조종</b> — Xbox 조이스틱 및 UDP 브릿지를 활용한 TwistStamped 제어 정보 수신 (DDS 불안정 우회)</span></li>
+                  <li><span><b>실험 자동화</b> — 원격 제어 스크립트를 통한 SSH 기반 로봇 조작, 실행 및 자동 데이터 수집</span></li>
+                  <li><span><b>기록</b> — rosbag2를 활용한 2D LiDAR 데이터, 오도메트리 정보 및 스테레오 이미지 일괄 취득</span></li>
+                </ul>
+              </div>
+              <figure class="figure" data-anim="scale-in" data-delay="3">
+                <div class="frame fit img-photo">
+                  <img src="../../extracted_images/20260531_230324_github_23s.gif" alt="조이스틱으로 주행하며 데이터를 기록하는 실물 TurtleBot3" />
+                </div>
+                <figcaption class="fig-cap">▲ 조이스틱 주행으로 실측 bag 기록</figcaption>
+              </figure>
+            </div>
+          </div>
+          <footer class="slide-foot">
+            <span class="label muted">ACQUISITION · REAL</span>
+            <span class="label muted count"></span>
+          </footer>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 08 · VISION PIPELINE
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide light">
+          <header class="slide-chrome">
+            <span class="label accent">05 // VISION</span>
+            <span class="label muted">PIPELINE</span>
+          </header>
+          <div class="slide-body stack">
+            <div class="head-block">
+              <span class="kicker" data-anim="fade-in" data-delay="0">VISION PIPELINE</span>
+              <div class="rule" data-anim="reveal-right" data-delay="1"></div>
+              <h2 class="h2" data-anim="fade-up" data-delay="1">비전 파이프라인 — <em>표준 처리 아키텍처</em></h2>
+            </div>
+            <div class="steps" data-anim="fade-up" data-delay="2" style="flex: 1">
+              <div class="step"><span class="step-num">01</span><span class="step-text">rosbag2 데이터 로드 및 전처리</span></div>
+              <div class="step"><span class="step-num">02</span><span class="step-text">좌우 이미지 프레임 시간 동기화</span></div>
+              <div class="step"><span class="step-num">03</span><span class="step-text">카메라 캘리브레이션 및 스테레오 정합(Rectification)</span></div>
+              <div class="step"><span class="step-num">04</span><span class="step-text">변위(Disparity) 맵 추정 (OpenCV SGBM / DEFOM-Stereo)</span></div>
+              <div class="step"><span class="step-num">05</span><span class="step-text">LiDAR 데이터 연계 Depth 오차 검증 및 보정</span></div>
+              <div class="step"><span class="step-num">06</span><span class="step-text">3D 포인트 클라우드(Point Cloud) 생성 및 좌표 변환 누적</span></div>
+              <div class="step"><span class="step-num">07</span><span class="step-text">복셀 다운샘플링 및 아웃라이어 필터링</span></div>
+              <div class="step"><span class="step-num">08</span><span class="step-text">최종 3D 형상 포맷(PLY/PCD/NPY) 출력</span></div>
+            </div>
+            <p class="caption muted" data-anim="fade-in" data-delay="3">실측 데이터 획득 과정에서 발생한 시스템 제약 및 예외 사항은 다음 장에 기술함</p>
+          </div>
+          <footer class="slide-foot">
+            <span class="label muted">VISION · PIPELINE</span>
+            <span class="label muted count"></span>
+          </footer>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 09 · FAILURE
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide dark">
+          <header class="slide-chrome">
+            <span class="label accent">06 // DIAGNOSIS</span>
+            <span class="label muted">POINTCLOUD FAILURE</span>
+          </header>
+          <div class="slide-body">
+            <div class="cols c-1-1 top">
+              <div class="stack center">
+                <div class="head-block">
+                  <span class="kicker" data-anim="fade-in" data-delay="0">RESULT · 결과</span>
+                  <div class="rule" data-anim="reveal-right" data-delay="1"></div>
+                  <h2 class="h2" data-anim="fade-up" data-delay="1">스테레오 매칭 데이터의 <em>기하 왜곡 및 포인트 분산 발생</em></h2>
+                </div>
+                <p class="body muted" data-anim="fade-up" data-delay="2" style="max-width: 620px">
+                  기존 알고리즘 기반 포인트 클라우드 매핑 결과, 평면 구조물의 윤곽이 왜곡되고 포인트가 분산되는 현상이 식별됨.
+                  주행 데이터셋(bag) 간의 ICP 정합 수행 후에도 좌표계 누적 오차로 인해 공간 형상 복원에 한계 노출.
+                </p>
+              </div>
+              <figure class="figure" data-anim="scale-in" data-delay="2">
+                <div class="frame contain img-data" style="background: var(--c-bg-alt)">
+                  <img src="../../extracted_images/기존_ICP_merge_결과.jpeg" alt="ICP 정합 전후 point cloud 비교, 구조가 흩뿌려져 있음" />
+                </div>
+                <figcaption class="fig-cap">▲ ICP merge 전 · 후 — 구조가 흩뿌려짐 (1,595,800 pts)</figcaption>
+              </figure>
+            </div>
+          </div>
+          <footer class="slide-foot">
+            <span class="label muted">FAILURE</span>
+            <span class="label muted count"></span>
+          </footer>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 10 · DIAGNOSIS
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide light">
+          <header class="slide-chrome">
+            <span class="label accent">06 // DIAGNOSIS</span>
+            <span class="label muted">ROOT CAUSE</span>
+          </header>
+          <div class="slide-body">
+            <div class="cols c-5-4 top">
+              <div class="stack center">
+                <div class="head-block">
+                  <span class="kicker" data-anim="fade-in" data-delay="0">오류 원인 진단</span>
+                  <div class="rule" data-anim="reveal-right" data-delay="1"></div>
+                  <h2 class="h2" data-anim="fade-up" data-delay="1">복합적 오류 발생 <em>핵심 요인 분석</em></h2>
+                </div>
+                <div class="stack" data-anim="fade-up" data-delay="2" style="gap: var(--gap-md)">
+                  <div class="cause">
+                    <span class="cause-head">CameraInfo 파라미터 유실</span>
+                    <span class="cause-body">듀얼 카메라 데이터셋 내 왜곡 보정 변수 및 내부 변수의 소실(Empty)로 전처리 및 왜곡 보정 수행 불가능</span>
+                  </div>
+                  <div class="cause">
+                    <span class="cause-head">카메라 TF 변환 회전각 왜곡</span>
+                    <span class="cause-body">기록된 bag 파일 내 서브 카메라(C270)의 상대 회전 오차값(Yaw 45°) 오기록으로 인한 좌표 정렬 실패</span>
+                  </div>
+                  <div class="cause">
+                    <span class="cause-head">오도메트리 기준 좌표계 불일치</span>
+                    <span class="cause-body">주행 실험 차수별 원점 좌표 불일치로 다중 데이터 병합 시 정렬 오차 발생</span>
+                  </div>
+                </div>
+              </div>
+              <figure class="figure" data-anim="scale-in" data-delay="3">
+                <div class="frame contain img-data"><img src="../../extracted_images/기존_output_top_down_진단.jpeg" alt="top-down 시점에서 본 point cloud 구조 붕괴 진단" /></div>
+                <figcaption class="fig-cap">▲ top-down 진단 — 구조 붕괴</figcaption>
+              </figure>
+            </div>
+          </div>
+          <footer class="slide-foot">
+            <span class="label muted">DIAGNOSIS</span>
+            <span class="label muted count"></span>
+          </footer>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 11 · RETRY · STEREO MATCHING
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide dark">
+          <header class="slide-chrome">
+            <span class="label accent">06 // DIAGNOSIS</span>
+            <span class="label muted">STEREO RETRY</span>
+          </header>
+          <div class="slide-body">
+            <div class="cols c-5-4 top">
+              <div class="stack center">
+                <div class="head-block">
+                  <span class="kicker" data-anim="fade-in" data-delay="0">RETRY · 정석으로 재시도</span>
+                  <div class="rule" data-anim="reveal-right" data-delay="1"></div>
+                  <h2 class="h2" data-anim="fade-up" data-delay="1">오류 데이터 파라미터 보정 후 <em>재시험 결과 및 한계 분석</em></h2>
+                </div>
+                <p class="body muted" data-anim="fade-up" data-delay="2">
+                  카메라 내부 파라미터 복구, 프레임 정렬, 기준점 동기화 등의 후처리를 진행하고 스테레오 매칭 과정을 재수행하였으나,
+                  매칭 밀도의 물리적 한계로 인해 희소 포인트 클라우드(Sparse Point Cloud) 획득에 머무름.
+                </p>
+                <ul class="bullet-list" data-anim="fade-up" data-delay="3" style="gap: var(--gap-sm)">
+                  <li><span><b>협소한 스테레오 기선 거리(Baseline)</b> — 물리적 장착 공간 제약으로 기선 거리(10cm 미만) 부족 및 변위 정밀도 한계</span></li>
+                  <li><span><b>이종 카메라 결합 한계</b> — 상이한 렌즈, 시야각, 조리개 값으로 인해 양방향 이미지 왜곡 양상 불일치</span></li>
+                  <li><span><b>측정 환경 노이즈</b> — 낮은 고도의 주행 시야각, 단조로운 복도 질감(Texture) 및 조명 반사로 왜곡 가중</span></li>
+                </ul>
+              </div>
+              <figure class="figure" data-anim="scale-in" data-delay="3">
+                <div class="frame contain img-data"><img src="../../extracted_images/3데처 stereo matching 배운대로.png" alt="재시도한 stereo matching의 per-frame disparity와 sparse point cloud" /></div>
+                <figcaption class="fig-cap">▲ 재시도 stereo matching — sparse cloud (combined 9,742 pts)</figcaption>
+              </figure>
+            </div>
+          </div>
+          <footer class="slide-foot">
+            <span class="label muted">RETRY</span>
+            <span class="label muted count"></span>
+          </footer>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 12 · PIVOT · LIDAR
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide light">
+          <header class="slide-chrome">
+            <span class="label accent">07 // PIVOT</span>
+            <span class="label muted">LIDAR MAPPING</span>
+          </header>
+          <div class="slide-body">
+            <div class="cols c-5-4 top">
+              <div class="stack center">
+                <div class="head-block">
+                  <span class="kicker" data-anim="fade-in" data-delay="0">방향 전환 · ANOTHER WAY</span>
+                  <div class="rule" data-anim="reveal-right" data-delay="1"></div>
+                  <h2 class="h2" data-anim="fade-up" data-delay="1">고정밀 <em>LiDAR 데이터를 기하학적 기준으로 설정</em></h2>
+                </div>
+                <ul class="bullet-list" data-anim="fade-up" data-delay="2" style="gap: var(--gap-sm)">
+                  <li><span><b>대안 아키텍처 수립</b> — 오차가 큰 스테레오 매칭 대신 LDS-01 LiDAR 데이터를 환경 구조의 기준으로 채택</span></li>
+                  <li><span><b>포인트 데이터 정제</b> — 유효 측정 범위 외부의 아웃라이어 제거 및 실제 환경 스케일 매칭 수행</span></li>
+                  <li><span><b>3D 벽면 수직 압출</b> — 정밀 2D 평면도 데이터 기반 가상 높이값(2.2m)을 부여하여 입체 복도 구조 가시화</span></li>
+                  <li><span><b>구현 기법의 실용성</b> — 전방향 3D Reconstruction 대신, 2D 구조를 3D 입체 기하 구조물로 전환하는 기법 적용</span></li>
+                </ul>
+              </div>
+              <div class="imgs-rows" data-anim="scale-in" data-delay="3">
+                <figure class="figure">
+                  <div class="frame contain img-data"><img src="../../extracted_images/LiDAR_floorplan_primary_결과.jpeg" alt="LiDAR floorplan과 빨간 주행 궤적" /></div>
+                  <figcaption class="fig-cap">▲ LiDAR floorplan + 주행 궤적 (2,259 cells)</figcaption>
+                </figure>
+                <figure class="figure">
+                  <div class="frame contain img-data"><img src="../../extracted_images/LiDAR_true_3D_scene.jpeg" alt="floor와 압출된 벽, 로봇 궤적이 있는 3D 장면" /></div>
+                  <figcaption class="fig-cap">▲ floor + extruded walls + trajectory</figcaption>
+                </figure>
+              </div>
+            </div>
+          </div>
+          <footer class="slide-foot">
+            <span class="label muted">PIVOT · LIDAR</span>
+            <span class="label muted count"></span>
+          </footer>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 13 · PANORAMA TEXTURING
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide light">
+          <header class="slide-chrome">
+            <span class="label accent">08 // VISUALIZATION</span>
+            <span class="label muted">PANORAMIC TEXTURING</span>
+          </header>
+          <div class="slide-body">
+            <div class="cols c-4-5 top">
+              <div class="stack center">
+                <div class="head-block">
+                  <span class="kicker" data-anim="fade-in" data-delay="0">파노라마 스티칭</span>
+                  <div class="rule" data-anim="reveal-right" data-delay="1"></div>
+                  <h2 class="h2" data-anim="fade-up" data-delay="1">3D 입체 기하 구조물과 <em>실측 영상 정보의 융합</em></h2>
+                </div>
+                <ul class="bullet-list" data-anim="fade-up" data-delay="2" style="gap: var(--gap-md)">
+                  <li><span><b>키프레임 기반 포토 매핑</b> — 취득한 C920 이미지 프레임을 추정 경로의 노드 좌표계와 연동하여 2.5D 투사 수행</span></li>
+                  <li><span><b>이미지 스티칭</b> — 연속 프레임 간의 특징점을 정합하여 광시야 파노라마 텍스처 데이터 구축</span></li>
+                  <li><span><b>멀티노드 가상 투어</b> — 다중 주행 지점의 파노라마를 연동하여 단일 WebGL 뷰어 플랫폼에서 통합 표출</span></li>
+                </ul>
+              </div>
+              <div class="imgs-rows" data-anim="scale-in" data-delay="3">
+                <figure class="figure">
+                  <div class="frame contain img-data"><img src="../../extracted_images/C920_photo_map_overlay.jpeg" alt="LiDAR floorplan 위에 timestamp로 정렬한 C920 실사진 맵" /></div>
+                  <figcaption class="fig-cap">▲ floorplan 위 C920 실사진 photo map</figcaption>
+                </figure>
+                <figure class="figure">
+                  <div class="frame fit img-data"><img src="../../extracted_images/Multi_node_stitched_tour.jpeg" alt="여러 노드의 파노라마를 한 뷰어로 보는 multi-node stitched tour" /></div>
+                  <figcaption class="fig-cap">▲ Multi-node stitched tour WebGL viewer</figcaption>
+                </figure>
+              </div>
+            </div>
+          </div>
+          <footer class="slide-foot">
+            <span class="label muted">PANORAMA</span>
+            <span class="label muted count"></span>
+          </footer>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 14 · FINAL OUTCOME
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide dark">
+          <header class="slide-chrome">
+            <span class="label accent">09 // FINAL OUTCOME</span>
+            <span class="label muted">EDGE-TEXTURED 3D MAP</span>
+          </header>
+          <div class="slide-body">
+            <div class="cols c-4-5 top">
+              <div class="stack center">
+                <div class="head-block">
+                  <span class="kicker" data-anim="fade-in" data-delay="0">LIDAR-DEPTH IMAGE MAPPING</span>
+                  <div class="rule" data-anim="reveal-right" data-delay="1"></div>
+                  <h2 class="h2" data-anim="fade-up" data-delay="1">LiDAR 구조 및 주행 포즈 추정 연계 <em>WebGL 3D<br />융합 지도</em></h2>
+                </div>
+                <ul class="bullet-list" data-anim="fade-up" data-delay="2" style="gap: var(--gap-sm)">
+                  <li><span><b>특징 기반 매핑 기법</b> — LiDAR 기반 기하 구조 프레임에 이미지 데이터 피처 투사 및 텍스처 매핑</span></li>
+                  <li><span><b>WebGL 뷰어 최적화</b> — 패널의 상대 Yaw 값을 활용한 회전 정합 최적화식 적용</span></li>
+                  <li><span><b>물리적 잔존 오차</b> — 2D LiDAR 센서와 카메라 간의 높이(Z축) 불일치 및 특징점 추출 환경의 제약</span></li>
+                  <li><span><b>연구 기여도</b> — 고가의 3D 스캔 인프라 대안으로, 제한된 시스템 구성 내에서 실용적이고 접근성 높은 가시화 맵 복원 결과 도출</span></li>
+                </ul>
+              </div>
+              <div style="display: grid; grid-template-columns: 1.65fr 1fr; gap: var(--gap-sm); height: 100%; min-height: 0" data-anim="scale-in" data-delay="3">
+                <figure class="figure">
+                  <div class="frame fit img-data"><img src="../../extracted_images/최종_Edge_textured_3D_map_desktop.jpeg" alt="Edge-textured 3D map WebGL 뷰어 데스크톱 화면" /></div>
+                  <figcaption class="fig-cap">▲ Edge-textured 3D map — desktop viewer</figcaption>
+                </figure>
+                <figure class="figure">
+                  <div class="frame fit img-data"><img src="../../extracted_images/최종_Edge_textured_3D_map_mobile.jpeg" alt="Edge-textured 3D map 모바일 뷰어 화면" /></div>
+                  <figcaption class="fig-cap">▲ mobile</figcaption>
+                </figure>
+              </div>
+            </div>
+          </div>
+          <footer class="slide-foot">
+            <span class="label muted">FINAL</span>
+            <span class="label muted count"></span>
+          </footer>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 15 · EVALUATION & LESSONS
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide dark">
+          <header class="slide-chrome">
+            <span class="label accent">10 // RETROSPECTIVE</span>
+            <span class="label muted">EVALUATION</span>
+          </header>
+          <div class="slide-body stack">
+            <div class="head-block">
+              <span class="kicker" data-anim="fade-in" data-delay="0">성찰 · 달성과 한계</span>
+              <div class="rule" data-anim="reveal-right" data-delay="1"></div>
+              <h2 class="h2" data-anim="fade-up" data-delay="1">달성 성과 및 <em>향후 연구 한계 분석</em></h2>
+            </div>
+            <div class="compare" style="flex: 1; min-height: 0" data-anim="fade-up" data-delay="2">
+              <div class="compare-panel left">
+                <div class="compare-label">ACHIEVED · 달성</div>
+                <ul class="bullet-list" style="font-size: 25px; gap: var(--gap-sm)">
+                  <li><span>이종 스테레오 카메라 및 LiDAR 센서 연계 실측 데이터 취득 환경 구축</span></li>
+                  <li><span>시뮬레이션 환경 구축 및 실물 센서 간 입출력 규격 일치</span></li>
+                  <li><span>LiDAR 기반 2D 도면 및 입체 벽면 매핑, WebGL 뷰어 시각화</span></li>
+                </ul>
+              </div>
+              <div class="compare-panel right">
+                <div class="compare-label after">LIMITS &amp; LESSONS · 한계</div>
+                <ul class="bullet-list" style="font-size: 25px; gap: var(--gap-sm)">
+                  <li><span><b>센서 하드웨어 한계</b> — 초저가 이종 스테레오 구성에 따른 기선 거리 확보 및 캘리브레이션 정밀도 확보의 제약</span></li>
+                  <li><span><b>데이터 무결성 문제</b> — 초기 캘리브레이션 정보 소실 및 오도메트리 원점 오차를 후처리 보정 알고리즘으로 극복</span></li>
+                  <li><span><b>동작 플랫폼 제약</b> — 전원 전압 제약으로 인한 최단 작동 시간, 모터 주행 속도 병목, 마운트 진동 노이즈 유입</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <footer class="slide-foot">
+            <span class="label muted">RETROSPECTIVE</span>
+            <span class="label muted count"></span>
+          </footer>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 16 · CLOSING THESIS (statement)
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide light slide--statement">
+          <div class="slide-chrome"></div>
+          <div class="slide-body" style="display: flex; flex-direction: column; justify-content: center; gap: var(--gap-md)">
+            <div class="chapter-num" data-anim="fade-in" data-delay="0">CONCLUSION</div>
+            <div class="rule" data-anim="reveal-right" data-delay="1" style="margin-bottom: 12px"></div>
+            <h1 class="h1" data-anim="fade-up" data-delay="2">
+              제한된 스테레오 카메라 구성에 따른 Dense Stereo 복원 한계를 규명하고,<br />
+              높은 신뢰성의 LiDAR 기반 기하 구조와 파노라마 텍스처 매핑을 결합한<br />
+              실용적 <em>WebGL 3D 맵핑 구현 방식</em>으로 목표를 전환하여 달성함
+            </h1>
+          </div>
+          <div class="slide-foot"></div>
+          <div class="grove-num">02</div>
+        </section>
+
+        <!-- ════════════════════════════════════════════════════════════════
+             SLIDE 17 · Q&A (end)
+             ════════════════════════════════════════════════════════════════ -->
+        <section class="slide dark slide--end">
+          <div class="slide-chrome"></div>
+          <div class="slide-body slide--end" style="display: flex; flex-direction: column; justify-content: center; gap: var(--gap-md)">
+            <div class="kicker" data-anim="fade-in" data-delay="0">HYPER TURTLE PROJECT · 1조</div>
+            <h1 class="display" data-anim="fade-up" data-delay="1">Q <em>&amp;</em> A</h1>
+            <p class="lead muted" data-anim="fade-up" data-delay="2">질문 및 답변 시간 — 발표를 경청해주셔서 감사합니다.</p>
+            <div class="label muted" data-anim="fade-in" data-delay="3" style="margin-top: 14px">
+              김강산 · 이성빈 · 최호준 · 박성호 &nbsp;//&nbsp; ROS 2 Jazzy · Ubuntu 24.04
+            </div>
+          </div>
+          <div class="slide-foot"></div>
+          <div class="grove-num">?</div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+        var stage = document.getElementById("stage");
+        var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+        var total = slides.length;
+        var current = 0;
+        var navWrap = document.getElementById("nav-dots");
+
+        /* ── Fixed-stage uniform scaler (letterbox, never reflow) ─────────── */
+        function fitStage() {
+          var scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+          var x = (window.innerWidth - 1920 * scale) / 2;
+          var y = (window.innerHeight - 1080 * scale) / 2;
+          stage.style.transform = "translate(" + x + "px," + y + "px) scale(" + scale + ")";
+        }
+
+        /* ── Footer counters ─────────────────────────────────────────────── */
+        function pad(n) { return (n < 10 ? "0" : "") + n; }
+        slides.forEach(function (s, i) {
+          var c = s.querySelector(".count");
+          if (c) c.textContent = pad(i + 1) + " / " + pad(total);
+          var dot = document.createElement("button");
+          dot.className = "nav-dot";
+          dot.setAttribute("aria-label", "슬라이드 " + (i + 1));
+          dot.addEventListener("click", function () { goTo(i); });
+          navWrap.appendChild(dot);
+        });
+        var dots = Array.prototype.slice.call(navWrap.children);
+
+        /* ── Navigation ──────────────────────────────────────────────────── */
+        function goTo(n) {
+          n = Math.max(0, Math.min(total - 1, n));
+          if (n === current) {
+            slides[n].classList.add("active");
+            return;
+          }
+          slides[current].classList.remove("active");
+          dots[current].classList.remove("is-active");
+          current = n;
+          slides[current].classList.add("active");
+          dots[current].classList.add("is-active");
+        }
+
+        window.addEventListener("resize", fitStage);
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === " " || e.key === "PageDown") {
+            e.preventDefault(); goTo(current + 1);
+          } else if (e.key === "ArrowLeft" || e.key === "ArrowUp" || e.key === "PageUp") {
+            e.preventDefault(); goTo(current - 1);
+          } else if (e.key === "Home") {
+            e.preventDefault(); goTo(0);
+          } else if (e.key === "End") {
+            e.preventDefault(); goTo(total - 1);
+          }
+        });
+
+        var wheelLock = false;
+        window.addEventListener("wheel", function (e) {
+          if (wheelLock) return;
+          if (Math.abs(e.deltaY) < 24 && Math.abs(e.deltaX) < 24) return;
+          wheelLock = true;
+          setTimeout(function () { wheelLock = false; }, 700);
+          if (e.deltaY > 0 || e.deltaX > 0) goTo(current + 1);
+          else goTo(current - 1);
+        }, { passive: true });
+
+        var tsX = null, tsY = null;
+        window.addEventListener("touchstart", function (e) {
+          tsX = e.touches[0].clientX; tsY = e.touches[0].clientY;
+        }, { passive: true });
+        window.addEventListener("touchend", function (e) {
+          if (tsX === null) return;
+          var dx = tsX - e.changedTouches[0].clientX;
+          var dy = tsY - e.changedTouches[0].clientY;
+          if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 45) {
+            if (dx > 0) goTo(current + 1); else goTo(current - 1);
+          }
+          tsX = null; tsY = null;
+        }, { passive: true });
+
+        /* ── Boot ────────────────────────────────────────────────────────── */
+        fitStage();
+        if (/[?&]still=1/.test(location.search)) document.body.classList.add("still");
+        var startParam = parseInt((location.search.match(/[?&]slide=(\d+)/) || [])[1], 10);
+        var start = isNaN(startParam) ? 0 : Math.max(0, Math.min(total - 1, startParam));
+        dots[start].classList.add("is-active");
+        goTo(start);
+      })();
+    </script>
+  </body>
+</html>
