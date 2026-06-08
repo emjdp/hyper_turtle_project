@@ -1103,13 +1103,12 @@
                   <h2 class="h2" data-anim="fade-up" data-delay="1">오류 데이터 파라미터 보정 후 <em>재시험 결과 및 한계 분석</em></h2>
                 </div>
                 <p class="body muted" data-anim="fade-up" data-delay="2">
-                  카메라 내부 파라미터 복구, 프레임 정렬, 기준점 동기화 등의 후처리를 진행하고 스테레오 매칭 과정을 재수행하였으나,
-                  매칭 밀도의 물리적 한계로 인해 희소 포인트 클라우드(Sparse Point Cloud) 획득에 머무름.
+                  Camera_info, TF, odom 이슈를 해결하고, rectification → disparity map → 3D back proj. 의 정석 방법을 시도해보았지만 여전히 결과가 좋지 않다.
                 </p>
                 <ul class="bullet-list" data-anim="fade-up" data-delay="3" style="gap: var(--gap-sm)">
-                  <li><span><b>협소한 스테레오 기선 거리(Baseline)</b> — 물리적 장착 공간 제약으로 기선 거리(10cm 미만) 부족 및 변위 정밀도 한계</span></li>
-                  <li><span><b>이종 카메라 결합 한계</b> — 상이한 렌즈, 시야각, 조리개 값으로 인해 양방향 이미지 왜곡 양상 불일치</span></li>
-                  <li><span><b>측정 환경 노이즈</b> — 낮은 고도의 주행 시야각, 단조로운 복도 질감(Texture) 및 조명 반사로 왜곡 가중</span></li>
+                  <li><span><b>Baseline 부족</b> — 두 카메라의 disparity 자체가 적다: baseline이 실측 기준 10cm조차 되지 않는다</span></li>
+                  <li><span><b>이종 카메라 결합</b> — HW 이슈로 서로 다른 카메라를 사용하며 화각, 색감, 노출, 렌즈, 해상도가 모두 달라 합치는 데 어려움이 있었다</span></li>
+                  <li><span><b>플랫폼 한계</b> — 바닥 중심의 저각도 시야, texture 부족, 빛반사 등</span></li>
                 </ul>
               </div>
               <figure class="figure" data-anim="scale-in" data-delay="3">
@@ -1141,10 +1140,10 @@
                   <h2 class="h2" data-anim="fade-up" data-delay="1">고정밀 <em>LiDAR 데이터를 기하학적 기준으로 설정</em></h2>
                 </div>
                 <ul class="bullet-list" data-anim="fade-up" data-delay="2" style="gap: var(--gap-sm)">
-                  <li><span><b>대안 아키텍처 수립</b> — 오차가 큰 스테레오 매칭 대신 LDS-01 LiDAR 데이터를 환경 구조의 기준으로 채택</span></li>
-                  <li><span><b>포인트 데이터 정제</b> — 유효 측정 범위 외부의 아웃라이어 제거 및 실제 환경 스케일 매칭 수행</span></li>
-                  <li><span><b>3D 벽면 수직 압출</b> — 정밀 2D 평면도 데이터 기반 가상 높이값(2.2m)을 부여하여 입체 복도 구조 가시화</span></li>
-                  <li><span><b>구현 기법의 실용성</b> — 전방향 3D Reconstruction 대신, 2D 구조를 3D 입체 기하 구조물로 전환하는 기법 적용</span></li>
+                  <li><span><b>방향 전환</b> — 신뢰할 수 있는 LDS-01 LiDAR 데이터를 구조적 뼈대로 쓰기로 선회</span></li>
+                  <li><span><b>Filtering</b> — LiDAR 에러값(최장거리 바운더리) 필터링</span></li>
+                  <li><span><b>3D Wall Extrusion</b> — 추출한 floorplan을 2.2m 높이의 3D mesh로 수직 압출(extrude)하여 입체감 확보</span></li>
+                  <li><span><b>실용적 접근</b> — 거창하게 써놨지만 2D LiDAR 데이터를 억지로 3D로 늘린 방식; 그러나 실환경에서 효과적인 시각화 달성</span></li>
                 </ul>
               </div>
               <div class="imgs-rows" data-anim="scale-in" data-delay="3">
@@ -1182,9 +1181,9 @@
                   <h2 class="h2" data-anim="fade-up" data-delay="1">3D 입체 기하 구조물과 <em>실측 영상 정보의 융합</em></h2>
                 </div>
                 <ul class="bullet-list" data-anim="fade-up" data-delay="2" style="gap: var(--gap-md)">
-                  <li><span><b>키프레임 기반 포토 매핑</b> — 취득한 C920 이미지 프레임을 추정 경로의 노드 좌표계와 연동하여 2.5D 투사 수행</span></li>
-                  <li><span><b>이미지 스티칭</b> — 연속 프레임 간의 특징점을 정합하여 광시야 파노라마 텍스처 데이터 구축</span></li>
-                  <li><span><b>멀티노드 가상 투어</b> — 다중 주행 지점의 파노라마를 연동하여 단일 WebGL 뷰어 플랫폼에서 통합 표출</span></li>
+                  <li><span><b>C920 Photo Map</b> — 획득한 keyframe 이미지들을 로봇 궤적 노드에 배치하여 2.5D 방식의 지도 매핑 시도</span></li>
+                  <li><span><b>Image Stitching 도입</b> — 연속된 C920 프레임들을 이미지 스티칭으로 정교하게 이어 붙여 파노라마 이미지를 획득함</span></li>
+                  <li><span><b>결과</b> — 꽤나 완성도 높은 파노라마 스티칭 이미지가 도출됨</span></li>
                 </ul>
               </div>
               <div class="imgs-rows" data-anim="scale-in" data-delay="3">
@@ -1222,10 +1221,9 @@
                   <h2 class="h2" data-anim="fade-up" data-delay="1">LiDAR 구조 및 주행 포즈 추정 연계 <em>WebGL 3D<br />융합 지도</em></h2>
                 </div>
                 <ul class="bullet-list" data-anim="fade-up" data-delay="2" style="gap: var(--gap-sm)">
-                  <li><span><b>특징 기반 매핑 기법</b> — LiDAR 기반 기하 구조 프레임에 이미지 데이터 피처 투사 및 텍스처 매핑</span></li>
-                  <li><span><b>WebGL 뷰어 최적화</b> — 패널의 상대 Yaw 값을 활용한 회전 정합 최적화식 적용</span></li>
-                  <li><span><b>물리적 잔존 오차</b> — 2D LiDAR 센서와 카메라 간의 높이(Z축) 불일치 및 특징점 추출 환경의 제약</span></li>
-                  <li><span><b>연구 기여도</b> — 고가의 3D 스캔 인프라 대안으로, 제한된 시스템 구성 내에서 실용적이고 접근성 높은 가시화 맵 복원 결과 도출</span></li>
+                  <li><span><b>안정적인 LiDAR-depth 활용</b> — 라이다 센서에서 추출한 depth를 이용한 안정적인 구조 기준 확보</span></li>
+                  <li><span><b>이미지 매핑</b> — 수십 장의 파노라마 이미지를 생성한 뒤 feature extract를 진행하여 depth 결과에 매핑</span></li>
+                  <li><span><b>한계</b> — 2D LiDAR와 3D 스테레오 카메라 매핑 시 Z축 불일치로 결과 품질 저하; no texture 환경으로 인해 추출 feature 수가 적어 매핑에 어려움 발생</span></li>
                 </ul>
               </div>
               <div style="display: grid; grid-template-columns: 1.65fr 1fr; gap: var(--gap-sm); height: 100%; min-height: 0" data-anim="scale-in" data-delay="3">
