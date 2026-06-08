@@ -1,0 +1,55 @@
+{
+  "source": "outputs/colmap_sfm",
+  "output": "outputs/c920_dense_feature_depth_now",
+  "status": "ready",
+  "method": "C920-only dense proxy: COLMAP pose + feature-track depth interpolation + dense grid back-projection",
+  "important_caveat": "This is not true neural monocular depth or COLMAP dense MVS. It densifies each registered image from sparse SfM track depths, so textureless areas are approximate.",
+  "work_width": 426,
+  "grid_stride": 3,
+  "voxel_size": 0.12,
+  "models": [
+    {
+      "id": "component_0_ba",
+      "label": "150628 + 150854 connected component",
+      "registered_images_used": 77,
+      "raw_dense_points": 837881,
+      "final_points": 90000,
+      "ply": "component_0_ba_dense_feature_depth.ply",
+      "bounds": {
+        "min": [
+          -20.414254651700052,
+          -9.272319406813724,
+          -17.326653015076957
+        ],
+        "max": [
+          9.170050045444675,
+          7.09201091986696,
+          10.59900633788406
+        ]
+      }
+    },
+    {
+      "id": "component_1",
+      "label": "second connected component",
+      "registered_images_used": 64,
+      "raw_dense_points": 696637,
+      "final_points": 90000,
+      "ply": "component_1_dense_feature_depth.ply",
+      "bounds": {
+        "min": [
+          -22.697058937254475,
+          -12.842739257154392,
+          -13.891427302969328
+        ],
+        "max": [
+          18.722772312772914,
+          11.463011985331137,
+          28.229459729612277
+        ]
+      }
+    }
+  ],
+  "combined_ply": "combined_dense_feature_depth_offset_for_view.ply",
+  "viewer": "outputs/c920_dense_feature_depth_now/index.html",
+  "summary": "outputs/c920_dense_feature_depth_now/summary.png"
+}
