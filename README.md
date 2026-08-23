@@ -25,6 +25,11 @@ Hyper Turtle Project는 TurtleBot3 Burger에 Logitech C920/C270 웹캠 2대와 L
 | ![Real robot drive](extracted_images/20260531_230324_github_23s.gif) | ![Simulation overview](docs/images/readme_sim_three_windows.gif) |
 | Joystick-driven TurtleBot3 Burger with dual webcams and LDS-01 | Gazebo, RViz, and dual camera streams running together |
 
+| Interactive C920 dense feature-depth map |
+| :---: |
+| [![C920 dense feature-depth interactive preview](docs/images/c920_dense_feature_depth_preview.gif)](https://emjdp.github.io/hyper_turtle_project/outputs/c920_dense_feature_depth_now/) |
+| **Click the preview to explore the WebGL viewer.**<br>C920-only dense surfel proxy generated with COLMAP feature-track depth interpolation and dense grid back-projection. |
+
 | Edge-textured 3D map | LiDAR floorplan | C920 image overlay |
 | :---: | :---: | :---: |
 | ![Edge textured 3D map](<extracted_images/최종_Edge_textured_3D_map_desktop.jpeg>) | ![LiDAR floorplan](<extracted_images/LiDAR_floorplan_primary_결과.jpeg>) | ![C920 map overlay](extracted_images/C920_photo_map_overlay.jpeg) |

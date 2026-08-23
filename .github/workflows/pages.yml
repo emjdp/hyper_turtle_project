@@ -1,4 +1,4 @@
-name: Deploy presentation to GitHub Pages
+name: Deploy project site to GitHub Pages
 
 on:
   push:
@@ -29,8 +29,10 @@ jobs:
         shell: bash
         run: |
           mkdir -p _site/extracted_images
+          mkdir -p _site/outputs/c920_dense_feature_depth_now
           cp index.html _site/index.html
           cp -a docs _site/docs
+          cp outputs/c920_dense_feature_depth_now/index.html _site/outputs/c920_dense_feature_depth_now/index.html
           cp "extracted_images/20260531_230324_github_23s.gif" _site/extracted_images/
           cp "extracted_images/3데처 stereo matching 배운대로.png" _site/extracted_images/
           cp "extracted_images/C920_photo_map_overlay.jpeg" _site/extracted_images/
