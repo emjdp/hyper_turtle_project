@@ -13,3 +13,4 @@ __pycache__/
 .claude/
 CODEX.md
 final_code/
+extracted_images/turtle-*.jpg
